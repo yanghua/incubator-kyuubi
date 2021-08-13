@@ -23,15 +23,14 @@ import org.apache.kyuubi.config.KyuubiConf
 
 abstract class Serverable(name: String) extends CompositeService(name) {
 
-  private val OOMHook = new Runnable { override def run(): Unit = stop() }
   private val started = new AtomicBoolean(false)
 
   val backendService: AbstractBackendService
-  private lazy val frontendService = new FrontendService(backendService, OOMHook)
+  val frontendService: AbstractFrontendService
   protected def supportsServiceDiscovery: Boolean
   val discoveryService: Service
 
-  def connectionUrl: String = frontendService.connectionUrl()
+  def connectionUrl: String = frontendService.connectionUrl(false)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf

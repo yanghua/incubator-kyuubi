@@ -15,27 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.kyuubi.server
 
-import org.apache.kyuubi.KyuubiException
+import org.apache.kyuubi.service.{AbstractFrontendService, BackendService}
 
-class NoopServer extends Serverable("noop") {
-  override val backendService = new NoopBackendService
-  //TODO
-  override val frontendService = null
-
-  override def start(): Unit = {
-    super.start()
-    if (getConf.getOption("kyuubi.test.server.should.fail").exists(_.toBoolean)) {
-      throw new IllegalArgumentException("should fail")
-    }
-  }
-
-  override protected def stopServer(): Unit = {
-    throw new KyuubiException("no need to stop me")
-  }
+class RestFrontendService(be: BackendService)
+  extends AbstractFrontendService(classOf[RestFrontendService].getSimpleName, be) {
 
 
-  override val discoveryService: Service = backendService
-  override protected val supportsServiceDiscovery: Boolean = false
+
+  override def connectionUrl(server: Boolean): String = ""
+
+
+
+
 }
