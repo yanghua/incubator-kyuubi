@@ -21,8 +21,7 @@ import org.apache.kyuubi.KyuubiException
 
 class NoopServer extends Serverable("noop") {
   override val backendService = new NoopBackendService
-  //TODO
-  override val frontendService = null
+  override val frontendService = new NoopFrontendService
 
   override def start(): Unit = {
     super.start()

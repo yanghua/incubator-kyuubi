@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.service
 
-class NoopFrontendService {
+class NoopFrontendService extends ThriftFrontendService(new NoopBackendService,
+  new Runnable { override def run(): Unit = () }) {
 
 }

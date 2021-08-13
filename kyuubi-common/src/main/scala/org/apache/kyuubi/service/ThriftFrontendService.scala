@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.service
 
-import java.net.{InetAddress, ServerSocket}
+import java.net.ServerSocket
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
@@ -30,7 +30,6 @@ import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TT
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
-import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -49,20 +48,20 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
 
   private var server: Option[TServer] = None
   private var serverThread: Thread = _
-  protected var serverAddr: InetAddress = _
-  protected var portNum: Int = _
-  @volatile protected var isStarted = false
+//  protected var serverAddr: InetAddress = _
+//  protected var portNum: Int = _
+//  @volatile protected var isStarted = false
 
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    this.conf = conf
+//    this.conf = conf
     try {
       hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-      val serverHost = conf.get(FRONTEND_BIND_HOST)
-      serverAddr = serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
-      portNum = conf.get(FRONTEND_BIND_PORT)
+//      val serverHost = conf.get(FRONTEND_BIND_HOST)
+//      serverAddr = serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
+//      portNum = conf.get(FRONTEND_BIND_PORT)
       val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS)
       val keepAliveTime = conf.get(FRONTEND_WORKER_KEEPALIVE_TIME)
@@ -79,7 +78,7 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
       val tServerSocket = new TServerSocket(serverSocket)
 
       val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE)
-      val requestTimeout = conf.get(FRONTEND_LOGIN_TIMEOUT).toInt
+//      val requestTimeout = conf.get(FRONTEND_LOGIN_TIMEOUT).toInt
       val beBackoffSlotLength = conf.get(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH).toInt
 
       val args = new TThreadPoolServer.Args(tServerSocket)
@@ -103,19 +102,6 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
           s"Failed to initialize frontend service on $serverAddr:$portNum.", e)
     }
     super.initialize(conf)
-  }
-
-  override def connectionUrl(server: Boolean = false): String = {
-    getServiceState match {
-      case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
-      case _ =>
-        if (server || conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
-          s"${serverAddr.getCanonicalHostName}:$portNum"
-        } else {
-          // engine use address if run on k8s with cluster mode
-          s"${serverAddr.getHostAddress}:$portNum"
-        }
-    }
   }
 
   override def start(): Unit = synchronized {
