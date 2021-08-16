@@ -105,7 +105,7 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
     super.initialize(conf)
   }
 
-  def connectionUrl(server: Boolean = false): String = {
+  override def connectionUrl(server: Boolean = false): String = {
     getServiceState match {
       case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
       case _ =>

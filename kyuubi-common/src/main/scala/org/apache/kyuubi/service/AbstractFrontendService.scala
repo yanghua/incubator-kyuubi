@@ -20,4 +20,6 @@ package org.apache.kyuubi.service
 abstract class AbstractFrontendService(name: String, be: BackendService)
   extends CompositeService(name) {
 
+  def connectionUrl(server: Boolean = false): String
+
 }
