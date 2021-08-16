@@ -38,7 +38,7 @@ import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
 
 class ThriftFrontendService private(name: String, be: BackendService, oomHook: Runnable)
-  extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
+  extends AbstractFrontendService(name, be) with TCLIService.Iface with Runnable with Logging {
 
   import ThriftFrontendService._
   import KyuubiConf._
