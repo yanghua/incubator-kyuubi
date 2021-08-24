@@ -51,6 +51,9 @@ private[server] object ApiRootResource {
     servlet.setInitParameter(
       ServerProperties.PROVIDER_PACKAGES,
       "org.apache.kyuubi.server.api.v1")
+    servlet.setInitParameter(
+      ServerProperties.PROVIDER_CLASSNAMES,
+      "org.glassfish.jersey.jackson.JacksonFeature")
     val handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
     BackendServiceProvider.setBackendService(handler, backendService)
     handler.setContextPath("/api")
