@@ -95,7 +95,8 @@ object JerseyTest {
 }
 
 
-@Path("hello") class HelloAction {
+@Path("hello")
+class HelloAction {
 
   @GET
   def asdf(): String = "hello"
@@ -109,6 +110,10 @@ object JerseyTest {
   @GET
   @Path("version")
   @Produces(Array(MediaType.APPLICATION_JSON))
-  def version(): VersionInfo = new VersionInfo("0.1.1")
+  def version(): VersionInfo = {
+    val versionInfo = new VersionInfo()
+    versionInfo.setNum(1234)
+    versionInfo
+  }
 
 }

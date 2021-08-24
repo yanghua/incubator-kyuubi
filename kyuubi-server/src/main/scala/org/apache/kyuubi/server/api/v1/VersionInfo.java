@@ -15,26 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.api.v1
+package org.apache.kyuubi.server.api.v1;
 
-import javax.servlet.ServletContext
+public class VersionInfo {
 
-import org.eclipse.jetty.server.handler.ContextHandler
+  private int num;
 
-import org.apache.kyuubi.cli.HandleIdentifier
-import org.apache.kyuubi.service.BackendService
-
-case class SessionInfo private[kyuubi](identifier: HandleIdentifier)
-
-private[v1] object BackendServiceProvider {
-
-  private val attribute = getClass.getCanonicalName
-
-  def setBackendService(contextHandler: ContextHandler, be: BackendService): Unit = {
-    contextHandler.setAttribute(attribute, be)
+  public VersionInfo() {
   }
 
-  def getBackendService(context: ServletContext): BackendService = {
-    context.getAttribute(attribute).asInstanceOf[BackendService]
+  public int getNum() {
+    return num;
+  }
+
+  public void setNum(int num) {
+    this.num = num;
   }
 }

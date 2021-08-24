@@ -35,7 +35,11 @@ private[v1] class ApiRootResource extends ApiRequestContext {
   @GET
   @Path("version")
   @Produces(Array(MediaType.APPLICATION_JSON))
-  def version(): VersionInfo = VersionInfo("0.1.1")
+  def version(): VersionInfo = {
+    val versionInfo = new VersionInfo()
+    versionInfo.setNum(1234)
+    versionInfo
+  }
 
   @GET
   @Path("ping")
