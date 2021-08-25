@@ -105,11 +105,11 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
     super.initialize(conf)
   }
 
-  override def connectionUrl(server: Boolean = false): String = {
+  override def connectionUrl: String = {
     getServiceState match {
       case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
       case _ =>
-        if (server || conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
+        if (conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
           s"${serverAddr.getCanonicalHostName}:$portNum"
         } else {
           // engine use address if run on k8s with cluster mode
@@ -128,7 +128,12 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
   }
 
   override def run(): Unit = try {
-    info(s"Starting and exposing JDBC connection at: jdbc:hive2://${connectionUrl(true)}/")
+    getServiceState match {
+      case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
+      case _ =>
+    }
+    info(s"Starting and exposing JDBC connection at: jdbc:hive2://" +
+      s"${serverAddr.getCanonicalHostName}:$portNum}/")
     server.foreach(_.serve())
   } catch {
     case _: InterruptedException => error(s"$getName is interrupted")

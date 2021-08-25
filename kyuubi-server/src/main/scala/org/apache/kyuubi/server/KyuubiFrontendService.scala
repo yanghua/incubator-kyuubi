@@ -34,13 +34,13 @@ class KyuubiFrontendService private(name: String, be: BackendService)
     this(classOf[KyuubiFrontendService].getSimpleName, be)
   }
 
-  override def connectionUrl(server: Boolean): String = {
+  override def connectionUrl: String = {
     getServiceState match {
       case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
       case _ =>
         val defaultFEService = getServices(0).asInstanceOf[AbstractFrontendService]
         if (defaultFEService != null) {
-          defaultFEService.connectionUrl(server)
+          defaultFEService.connectionUrl
         } else {
           throw new IllegalStateException("Can not find frontend services!")
         }
