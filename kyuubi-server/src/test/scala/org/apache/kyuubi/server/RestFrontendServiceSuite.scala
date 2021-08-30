@@ -41,7 +41,7 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
     server.initialize(conf)
     assert(server.getServiceState === INITIALIZED)
-    val frontendService = server.getServices(1).asInstanceOf[RestFrontendService]
+    val frontendService = server.getServices(0).asInstanceOf[RestFrontendService]
     assert(frontendService.getServiceState == INITIALIZED)
     assert(server.connectionUrl.split(":").length === 2)
     assert(server.getConf === conf)
@@ -68,7 +68,7 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
     server.initialize(conf)
     assert(server.getServiceState === INITIALIZED)
-    val frontendService = server.getServices(1).asInstanceOf[RestFrontendService]
+    val frontendService = server.getServices(0).asInstanceOf[RestFrontendService]
     assert(frontendService.getServiceState == INITIALIZED)
     assert(server.connectionUrl.split(":").length === 2)
     assert(server.getConf === conf)
@@ -97,7 +97,7 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
     server.initialize(conf)
     assert(server.getServiceState === INITIALIZED)
-    val frontendService = server.getServices(1).asInstanceOf[RestFrontendService]
+    val frontendService = server.getServices(0).asInstanceOf[RestFrontendService]
     assert(frontendService.getServiceState == INITIALIZED)
     assert(server.connectionUrl.split(":").length === 2)
     assert(server.getConf === conf)
@@ -118,7 +118,13 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
   class RestNoopServer extends Serverable("noop") {
 
     override val backendService = new NoopBackendService
-    override val frontendService = new RestFrontendService(backendService)
+    val frontendService = new RestFrontendService(backendService)
+
+
+    override def initialize(conf: KyuubiConf): Unit = {
+      addService(frontendService)
+      super.initialize(conf)
+    }
 
     override def start(): Unit = {
       super.start()
@@ -133,6 +139,8 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
     override val discoveryService: Service = backendService
     override protected val supportsServiceDiscovery: Boolean = false
+
+    override def connectionUrl: String = frontendService.connectionUrl()
   }
 
 }
