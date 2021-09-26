@@ -70,7 +70,10 @@ class KyuubiSessionImpl(
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
     withZkClient(sessionConf) { zkClient =>
+      logger.info("---------- Try to get engine-------")
       val (host, port) = engine.getOrCreate(zkClient)
+      logger.info("---------- Got engine-------")
+      logger.info("---------- Try to open session-------")
       openSession(host, port)
     }
     // we should call super.open after kyuubi session is already opened
@@ -80,6 +83,8 @@ class KyuubiSessionImpl(
   private def openSession(host: String, port: Int): Unit = {
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
+//    logger.info(s"------------------host is : $host------------")
+//    logger.info(s"-------------------port is : $port-----------")
     transport = PlainSASLHelper.getPlainTransport(
       user, passwd, new TSocket(host, port, loginTimeout))
     if (!transport.isOpen) {

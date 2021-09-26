@@ -29,7 +29,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.NamedThreadFactory
 
-trait ProcBuilder {
+trait ProcBuilder extends Logging {
 
   import ProcBuilder._
 
@@ -104,9 +104,10 @@ trait ProcBuilder {
   }
 
   final def start: Process = synchronized {
-
+    logger.info("------------- ProcBuilder#start -----------")
     val proc = processBuilder.start()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
+    logger.info("------------- ProcBuilder#started -----------")
 
     val redirect: Runnable = { () =>
       try {
@@ -145,6 +146,7 @@ trait ProcBuilder {
     logCaptureThreadReleased = false
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
+    logger.info("---------------End of the method: ProcBuilder#start")
     proc
   }
 
