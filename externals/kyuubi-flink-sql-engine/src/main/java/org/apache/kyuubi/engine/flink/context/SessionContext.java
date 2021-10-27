@@ -19,8 +19,6 @@
 package org.apache.kyuubi.engine.flink.context;
 
 import java.util.Objects;
-import java.util.Optional;
-import javax.annotation.Nullable;
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 
 /**
@@ -54,7 +52,7 @@ public class SessionContext {
 	/** Returns ExecutionContext.Builder with given {@link SessionContext} session context. */
 	public ExecutionContext.Builder createExecutionContextBuilder(EngineEnvironment sessionEnv) {
 		return ExecutionContext.builder(
-			engineContext.getDefaultEnv(),
+			engineContext.getEngineEnv(),
 			sessionEnv,
 			engineContext.getDependencies(),
 			engineContext.getFlinkConfig(),

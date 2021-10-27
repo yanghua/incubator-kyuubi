@@ -39,15 +39,15 @@ import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
  * Context describing default environment, dependencies, flink config, etc.
  */
 public class EngineContext {
-	private final EngineEnvironment defaultEnv;
+	private final EngineEnvironment engineEnv;
 	private final List<URL> dependencies;
 	private final Configuration flinkConfig;
 	private final List<CustomCommandLine> commandLines;
 	private final Options commandLineOptions;
 	private final ClusterClientServiceLoader clusterClientServiceLoader;
 
-	public EngineContext(EngineEnvironment defaultEnv, List<URL> dependencies) {
-		this.defaultEnv = defaultEnv;
+	public EngineContext(EngineEnvironment engineEnv, List<URL> dependencies) {
+		this.engineEnv = engineEnv;
 		this.dependencies = dependencies;
 
 		// discover configuration
@@ -76,12 +76,12 @@ public class EngineContext {
 	 */
 	@VisibleForTesting
 	public EngineContext(
-			EngineEnvironment defaultEnv,
+			EngineEnvironment engineEnv,
 			List<URL> dependencies,
 			Configuration flinkConfig,
 			CustomCommandLine commandLine,
 			ClusterClientServiceLoader clusterClientServiceLoader) {
-		this.defaultEnv = defaultEnv;
+		this.engineEnv = engineEnv;
 		this.dependencies = dependencies;
 		this.flinkConfig = flinkConfig;
 		this.commandLines = Collections.singletonList(commandLine);
@@ -93,8 +93,8 @@ public class EngineContext {
 		return flinkConfig;
 	}
 
-	public EngineEnvironment getDefaultEnv() {
-		return defaultEnv;
+	public EngineEnvironment getEngineEnv() {
+		return engineEnv;
 	}
 
 	public List<URL> getDependencies() {
@@ -133,7 +133,7 @@ public class EngineContext {
 			return false;
 		}
 		EngineContext context = (EngineContext) o;
-		return Objects.equals(defaultEnv, context.defaultEnv) &&
+		return Objects.equals(engineEnv, context.engineEnv) &&
 			Objects.equals(dependencies, context.dependencies) &&
 			Objects.equals(flinkConfig, context.flinkConfig) &&
 			Objects.equals(commandLines, context.commandLines) &&
@@ -144,6 +144,6 @@ public class EngineContext {
 	@Override
 	public int hashCode() {
 		return Objects.hash(
-			defaultEnv, dependencies, flinkConfig, commandLines, commandLineOptions, clusterClientServiceLoader);
+				engineEnv, dependencies, flinkConfig, commandLines, commandLineOptions, clusterClientServiceLoader);
 	}
 }

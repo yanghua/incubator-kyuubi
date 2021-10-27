@@ -17,20 +17,19 @@
 
 package org.apache.kyuubi.engine.flink
 
+import org.apache.flink.runtime.util.EnvironmentInformation
+
 import java.io.File
 import java.net.URL
 import java.util
 import java.util.concurrent.CountDownLatch
-
 import scala.collection.JavaConversions._
-
 import org.apache.flink.util.JarUtils
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.{FLINK_ENGINE_SHUTDOWN_PRIORITY, addShutdownHook}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.countDownLatch
-import org.apache.kyuubi.engine.flink.config.EngineEnvironment
+import org.apache.kyuubi.engine.flink.config.{EngineEnvironment, EngineOptions, EngineOptionsParser}
 import org.apache.kyuubi.engine.flink.config.EnvironmentUtil.readEnvironment
 import org.apache.kyuubi.engine.flink.context.EngineContext
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
@@ -73,18 +72,27 @@ object FlinkSQLEngine extends Logging {
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
 
+    checkFlinkVersion()
+
+
     try {
-      logger.info(System.getProperty("kyuubi.ha.engine.ref.id"))
-      kyuubiConf.set(HA_ZK_ENGINE_REF_ID, System.getProperty("kyuubi.ha.engine.ref.id"))
+      val engineOptions = EngineOptionsParser.parseGatewayOptions(args)
 
-      val engineEnv = createEngineEnvironment()
-      val dependencies = FlinkSQLEngine.discoverDependencies(null, null)
-      val defaultContext = new EngineContext(engineEnv, dependencies)
+      if (engineOptions.isPrintHelp) {
+        EngineOptionsParser.printHelp()
+      } else {
+        logger.info(System.getProperty("kyuubi.ha.engine.ref.id"))
+        kyuubiConf.set(HA_ZK_ENGINE_REF_ID, System.getProperty("kyuubi.ha.engine.ref.id"))
 
-      startEngine(defaultContext)
+        val engineEnv = createEngineEnvironment(engineOptions)
+        val dependencies = FlinkSQLEngine.discoverDependencies(null, null)
+        val defaultContext = new EngineContext(engineEnv, dependencies)
 
-      // blocking main thread
-      countDownLatch.await()
+        startEngine(defaultContext)
+
+        // blocking main thread
+        countDownLatch.await()
+      }
     } catch {
       case t: Throwable if currentEngine.isDefined =>
         currentEngine.foreach { engine =>
@@ -105,10 +113,9 @@ object FlinkSQLEngine extends Logging {
     }
   }
 
-  def createEngineEnvironment(): EngineEnvironment = {
+  def createEngineEnvironment(engineOptions: EngineOptions): EngineEnvironment = {
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    // TODO TBD
-    readEnvironment(null)
+    readEnvironment(engineOptions.getDefaultConfig.orElse(null))
   }
 
   def discoverDependencies(jars: util.List[URL], libraries: util.List[URL]): util.List[URL] = {
@@ -139,5 +146,13 @@ object FlinkSQLEngine extends Logging {
     }
     if (logger.isDebugEnabled) logger.debug("Using the following dependencies: {}", dependencies)
     dependencies
+  }
+
+  private def checkFlinkVersion(): Unit = {
+    val flinkVersion = EnvironmentInformation.getVersion
+    if (!flinkVersion.startsWith("1.12")) {
+      logger.error("Only Flink-1.12 is supported now!")
+      throw new RuntimeException("Only Flink-1.12 is supported now!")
+    }
   }
 }
