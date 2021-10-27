@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.util.TimeUtils;
 import org.apache.kyuubi.engine.flink.config.ConfigUtil;
+import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 
 /**
  * Describes a session configuration entry.
@@ -53,7 +54,7 @@ public class SessionEntry extends ConfigEntry {
 	}
 
 	public Map<String, String> asTopLevelMap() {
-		return properties.asPrefixedMap(org.apache.kyuubi.engine.flink.config.Environment.SESSION_ENTRY + '.');
+		return properties.asPrefixedMap(EngineEnvironment.SESSION_ENTRY + '.');
 	}
 
 	/**

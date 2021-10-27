@@ -19,14 +19,13 @@ package org.apache.kyuubi.engine.flink.operation
 
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
-import org.apache.flink.api.java.ExecutionEnvironment
-
+import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
-class GetTableTypes(env: ExecutionEnvironment, session: Session)
-  extends FlinkOperation(env, OperationType.GET_TABLE_TYPES, session) {
+class GetTableTypes(sessionContext: SessionContext, session: Session)
+  extends FlinkOperation(sessionContext, OperationType.GET_TABLE_TYPES, session) {
 
   override protected def runInternal(): Unit = {
     resultSet = OperationUtil.stringListToResultSet(

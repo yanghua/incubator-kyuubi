@@ -38,7 +38,6 @@ class FlinkEngineContainerBuilder(
   extends ProcBuilder with Logging{
 
   override protected def executable: String = {
-    logger.info("java home: " + env.get("JAVA_HOME").get)
     val flinkHomeOpt = env.get("JAVA_HOME").orElse {
       val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
         .split("kyuubi-server")
@@ -57,20 +56,10 @@ class FlinkEngineContainerBuilder(
     }
 
     env.get("JAVA_HOME").get + "/bin/java"
-//    "/usr/local/Cellar/openjdk@11/11.0.12/libexec/openjdk.jdk/Contents/Home/bin/java"
-
-//    flinkHomeOpt.map{ dir =>
-//      Paths.get(dir, "bin", FLINK_SUBMIT_FILE).toAbsolutePath.toFile.getCanonicalPath
-//    }.getOrElse {
-//      throw KyuubiSQLException("FLINK_HOME is not set! " +
-//        "For more detail information on installing and configuring Spark, please visit " +
-//        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
-//    }
   }
 
   override protected def mainResource: Option[String] = {
     val jarName = s"${module}-$KYUUBI_VERSION.jar"
-    logger.info(s"jar name : $jarName")
     conf.get(ENGINE_FLINK_MAIN_RESOURCE).filter { userSpecified =>
       // skip check exist if not local file.
       val uri = new URI(userSpecified)
@@ -108,12 +97,7 @@ class FlinkEngineContainerBuilder(
     buffer += "/Users/vinoyang/Documents/projects/apache-kyuubi-1.4.0-SNAPSHOT-bin-test/jars/*:" +
       "/Users/vinoyang/Documents/projects/apache-kyuubi-1.4.0-SNAPSHOT-bin-test/" +
       "externals/engines/flink/kyuubi-flink-sql-engine-1.4.0-SNAPSHOT.jar"
-//    buffer += CLASS
     buffer += mainClass
-//    conf.toSparkPrefixedConf.foreach { case (k, v) =>
-//      buffer += CONF
-//      buffer += s"$k=$v"
-//    }
 
     // iff the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {
@@ -122,12 +106,7 @@ class FlinkEngineContainerBuilder(
     }
 
     mainResource.foreach { r => buffer += r }
-
     buffer += "&"
-
-    logger.info("----------------")
-    logger.info(buffer.toString())
-
     buffer.toArray
   }
 

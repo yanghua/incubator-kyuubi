@@ -17,21 +17,19 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import org.apache.flink.api.java.ExecutionEnvironment
-
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.operation.{Operation, OperationManager}
-import org.apache.kyuubi.session.{Session, SessionHandle}
-
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.engine.flink.context.SessionContext
+import org.apache.kyuubi.operation.{Operation, OperationManager}
+import org.apache.kyuubi.session.{Session, SessionHandle}
+
 class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManager") {
 
-  private val sessionToFlink = new ConcurrentHashMap[SessionHandle, ExecutionEnvironment]()
+  private val sessionToFlink = new ConcurrentHashMap[SessionHandle, SessionContext]()
 
-  def getFlinkSession(sessionHandle: SessionHandle): ExecutionEnvironment = {
-    logger.info(s"Invoke getFlinkSession: $sessionHandle")
+  def getFlinkSession(sessionHandle: SessionHandle): SessionContext = {
     logger.info(sessionToFlink.toString)
     val flinkSession = sessionToFlink.get(sessionHandle)
     if (flinkSession == null) {
@@ -40,14 +38,12 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
     flinkSession
   }
 
-  def setFlinkSession(sessionHandle: SessionHandle, env: ExecutionEnvironment): Unit = {
-    logger.info(s"Invoke setFlinkSession: $sessionHandle")
-    sessionToFlink.put(sessionHandle, env)
+  def setFlinkSession(sessionHandle: SessionHandle, sessionContext: SessionContext): Unit = {
+    sessionToFlink.put(sessionHandle, sessionContext)
     logger.info(sessionToFlink.toString)
   }
 
-  def removeFlinkSession(sessionHandle: SessionHandle): ExecutionEnvironment = {
-    logger.info(s"Invoke removeFlinkSession: $sessionHandle")
+  def removeFlinkSession(sessionHandle: SessionHandle): SessionContext = {
     logger.info(sessionToFlink.toString)
     sessionToFlink.remove(sessionHandle)
   }
@@ -59,14 +55,12 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       queryTimeout: Long): Operation = null
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
-    info("Invoke newGetTypeInfoOperation ")
     null
   }
 
   override def newGetCatalogsOperation(session: Session): Operation = {
-    info(s"Invoke newGetCatalogsOperation: ${session.handle}")
-    val env = getFlinkSession(session.handle)
-    val op = new GetCatalogs(env, session)
+    val sessionContext = getFlinkSession(session.handle)
+    val op = new GetCatalogs(sessionContext, session)
     addOperation(op)
   }
 
@@ -86,8 +80,8 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
-    val env = getFlinkSession(session.handle)
-    val op = new GetTableTypes(env, session)
+    val sessionContext = getFlinkSession(session.handle)
+    val op = new GetTableTypes(sessionContext, session)
     addOperation(op)
   }
 

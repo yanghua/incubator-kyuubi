@@ -18,7 +18,7 @@
 
 package org.apache.kyuubi.engine.flink.config.entries;
 
-import static org.apache.kyuubi.engine.flink.config.Environment.EXECUTION_ENTRY;
+import static org.apache.kyuubi.engine.flink.config.EngineEnvironment.EXECUTION_ENTRY;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -350,7 +350,7 @@ public class ExecutionEntry extends ConfigEntry {
 
 	/**
 	 * Creates a new execution entry enriched with additional properties that are prefixed with
-	 * Environment#EXECUTION_ENTRY.
+	 * EngineEnvironment#EXECUTION_ENTRY.
 	 */
 	public static ExecutionEntry enrich(ExecutionEntry execution, Map<String, String> prefixedProperties) {
 		final Map<String, String> enrichedProperties = new HashMap<>(execution.asMap());

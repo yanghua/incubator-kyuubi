@@ -17,14 +17,20 @@
 
 package org.apache.kyuubi.engine.flink
 
-import org.apache.flink.api.java.ExecutionEnvironment
-
+import org.apache.flink.client.cli.DefaultCLI
+import org.apache.flink.client.deployment.DefaultClusterClientServiceLoader
+import org.apache.flink.configuration.Configuration
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.flink.config.EngineEnvironment
+import org.apache.kyuubi.engine.flink.context.EngineContext
+
+import java.net.URL
+import java.util
 
 trait WithFlinkSQLEngine extends KyuubiFunSuite {
 
-  protected var env: ExecutionEnvironment = _
+  protected var engineEnv: EngineEnvironment = _
   protected var engine: FlinkSQLEngine = _
   // conf will be loaded until start spark engine
   def withKyuubiConf: Map[String, String]
@@ -47,8 +53,12 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       System.setProperty(k, v)
       kyuubiConf.set(k, v)
     }
-    env = FlinkSQLEngine.createExecutionEnvironment()
-    FlinkSQLEngine.startEngine(env)
+    engineEnv = FlinkSQLEngine.createEngineEnvironment()
+    val dependencies = FlinkSQLEngine.discoverDependencies(
+      new util.ArrayList[URL](), new util.ArrayList[URL]())
+    val defaultContext = new EngineContext(engineEnv, dependencies, new Configuration,
+      new DefaultCLI, new DefaultClusterClientServiceLoader)
+    FlinkSQLEngine.startEngine(defaultContext)
     engine = FlinkSQLEngine.currentEngine.get
     connectionUrl = engine.frontendServices.head.connectionUrl
   }
@@ -58,13 +68,9 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       engine.stop()
       engine = null
     }
-
-    if (env != null) {
-      env = null
-    }
   }
 
   protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
-  def getFlinkEnv: ExecutionEnvironment = env
+  def getFlinkEngineEnv: EngineEnvironment = engineEnv
 
 }

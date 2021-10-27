@@ -17,16 +17,20 @@
 
 package org.apache.kyuubi.engine.flink.session
 
-import org.apache.flink.api.java.ExecutionEnvironment
+import java.util.Collections
+import scala.collection.JavaConverters.mapAsJavaMapConverter
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine
+import org.apache.kyuubi.engine.flink.config.EngineEnvironment
+import org.apache.kyuubi.engine.flink.config.entries.{ExecutionEntry, ViewEntry}
+import org.apache.kyuubi.engine.flink.context.{EngineContext, SessionContext}
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
-class FlinkSQLSessionManager(env: ExecutionEnvironment)
+class FlinkSQLSessionManager(engineContext: EngineContext)
   extends SessionManager("FlinkSQLSessionManager") {
 
   override protected def isServer: Boolean = false
@@ -43,17 +47,41 @@ class FlinkSQLSessionManager(env: ExecutionEnvironment)
 
     info(s"config is : ${conf.seq.toString()}")
 
-    val sessionImpl = new FlinkSessionImpl(protocol, user, password, ipAddress, conf, this, null)
-    val handle = sessionImpl.handle
+    val newProperties = collection.mutable.Map[String, String]()
 
-//    sessionImpl.normalizedConf.foreach {
-//
-//    }
+    newProperties ++= conf
+
+    newProperties +=
+      (EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_PLANNER -> "blink")
+    newProperties +=
+      (EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_TYPE -> "batch")
+
+    // for batch mode we ensure that results are provided in materialized form
+    if ("executionType".equalsIgnoreCase(ExecutionEntry.EXECUTION_TYPE_VALUE_BATCH)) {
+      newProperties += (
+        EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_RESULT_MODE ->
+        ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_TABLE)
+    }
+    // for streaming mode we ensure that results are provided in changelog form
+    else {
+      newProperties += (
+        EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_RESULT_MODE ->
+        ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_CHANGELOG)
+    }
+
+    val sessionEnv = EngineEnvironment.enrich(
+      engineContext.getDefaultEnv, newProperties.asJava, Collections.emptyMap[String, ViewEntry])
+
+    val sessionContext = new SessionContext(sessionEnv, engineContext)
+
+    val sessionImpl = new FlinkSessionImpl(
+      protocol, user, password, ipAddress, conf, this, sessionContext)
+    val handle = sessionImpl.handle
 
     try {
       sessionImpl.open()
 
-      operationManager.setFlinkSession(handle, env)
+      operationManager.setFlinkSession(handle, sessionContext)
       setSession(handle, sessionImpl)
       info(s"$user's session with $handle is opened, current opening sessions" +
         s" $getOpenSessionCount")
@@ -63,51 +91,6 @@ class FlinkSQLSessionManager(env: ExecutionEnvironment)
         sessionImpl.close()
         throw KyuubiSQLException(e)
     }
-
-//    SessionHandle(HandleIdentifier(), TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
-
-//    val defaultContext = new DefaultContext()
-//
-//    val executionType = ExecutionEntry.EXECUTION_TYPE_VALUE_BATCH
-//
-//    // build session context
-//    val newProperties: util.Map[String, String] = new util.HashMap[String, String]()
-//    newProperties.put(Environment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_PLANNER, null)
-//    newProperties.put(Environment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_TYPE,
-//      executionType)
-//
-//    if (executionType.equalsIgnoreCase(ExecutionEntry.EXECUTION_TYPE_VALUE_BATCH)) {
-//      // for batch mode we ensure that results are provided in materialized form
-//      newProperties.put(Environment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_RESULT_MODE,
-//        ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_TABLE)
-//    }
-//    else { // for streaming mode we ensure that results are provided in changelog form
-//      newProperties.put(Environment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_RESULT_MODE,
-//        ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_CHANGELOG)
-//    }
-//
-//    val sessionEnv: Environment = Environment.enrich(defaultContext.getDefaultEnv,
-//      newProperties, Collections.emptyMap)
-//
-//    val sessionContext = new SessionContext("default session", sessionEnv, defaultContext)
-//
-//    val session = new FlinkSessionImpl(protocol, user, password, ipAddress, conf, this, sessionContext)
-//    val handle = session.handle
-//    // flink sql gateway SessionManager#createSession
-//
-//    try {
-//
-//      session.open()
-//
-//      setSession(handle, session)
-//      info(s"$user's session with $handle is opened, current opening sessions" +
-//        s" $getOpenSessionCount")
-//      handle
-//    } catch {
-//      case e: Exception =>
-//        session.close()
-//        throw KyuubiSQLException(e)
-//    }
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

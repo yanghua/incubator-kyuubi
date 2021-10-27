@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.kyuubi.engine.flink.config.ConfigUtil;
+import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 
 /**
  * Describes a gateway configuration entry.
@@ -60,7 +61,7 @@ public class ServerEntry extends ConfigEntry {
 	}
 
 	public Map<String, String> asTopLevelMap() {
-		return properties.asPrefixedMap(org.apache.kyuubi.engine.flink.config.Environment.SERVER_ENTRY + '.');
+		return properties.asPrefixedMap(EngineEnvironment.SERVER_ENTRY + '.');
 	}
 
 	/**

@@ -17,15 +17,14 @@
 
 package org.apache.kyuubi.engine.flink
 
-import org.apache.flink.api.java.ExecutionEnvironment
-
+import org.apache.kyuubi.engine.flink.context.EngineContext
 import org.apache.kyuubi.engine.flink.session.FlinkSQLSessionManager
 import org.apache.kyuubi.service.AbstractBackendService
 import org.apache.kyuubi.session.SessionManager
 
-class FlinkSQLBackendService(env: ExecutionEnvironment)
+class FlinkSQLBackendService(engineContext: EngineContext)
   extends AbstractBackendService("FlinkSQLBackendService") {
 
-  override val sessionManager: SessionManager = new FlinkSQLSessionManager(env)
+  override val sessionManager: SessionManager = new FlinkSQLSessionManager(engineContext)
 
 }

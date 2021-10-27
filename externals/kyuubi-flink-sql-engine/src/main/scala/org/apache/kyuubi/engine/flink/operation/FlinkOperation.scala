@@ -18,10 +18,10 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.flink.api.java.ExecutionEnvironment
 import org.apache.flink.table.types.logical.{BigIntType, BooleanType, DecimalType, DoubleType, FloatType, IntType, LogicalType, NullType, TinyIntType, VarCharType}
 import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift.{TBoolColumn, TBoolValue, TCLIServiceConstants, TColumn, TColumnDesc, TColumnValue, TDoubleValue, TI16Column, TI16Value, TI32Value, TI64Value, TPrimitiveTypeEntry, TProtocolVersion, TRow, TRowSet, TStringColumn, TStringValue, TTableSchema, TTypeDesc, TTypeEntry, TTypeId, TTypeQualifierValue, TTypeQualifiers}
+import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.{FetchIterator, IterableFetchIterator}
 import org.apache.kyuubi.engine.flink.result.{ColumnInfo, ResultSet}
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
@@ -39,7 +39,8 @@ import java.util.Collections
 import scala.collection.JavaConverters.{collectionAsScalaIterableConverter, mapAsJavaMapConverter, seqAsJavaListConverter}
 import scala.language.implicitConversions
 
-abstract class FlinkOperation(env: ExecutionEnvironment, opType: OperationType, session: Session)
+abstract class FlinkOperation(
+    sessionContext: SessionContext, opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
 
   private val timeZone: ZoneId = {
@@ -133,15 +134,6 @@ object FlinkOperation {
   }
 
   def toRowBaseSet(rows: Seq[Row], resultSet: ResultSet, timeZone: ZoneId): TRowSet = {
-//    val tRows: java.util.List[TRow] = new util.ArrayList[TRow]()
-//    resultSet.getData.forEach(row => {
-//      val tRow = new TRow()
-//      (0 until row.getArity).map(i => toTColumnValue(i, row, resultSet, timeZone))
-//        .foreach(tRow.addToColVals)
-//      tRows.add(tRow)
-//    })
-
-
     val tRows = rows.map { row =>
       val tRow = new TRow()
       (0 until row.getArity).map(i => toTColumnValue(i, row, resultSet, timeZone))

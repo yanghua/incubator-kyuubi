@@ -21,32 +21,25 @@ package org.apache.kyuubi.engine.flink.context;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import org.apache.kyuubi.engine.flink.config.Environment;
+import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 
 /**
  * Context describing current session properties, original properties, ExecutionContext, etc.
  */
 public class SessionContext {
-	private final String sessionName;
-	private final Environment originalSessionEnv;
-	private final DefaultContext defaultContext;
+	private final EngineEnvironment originalSessionEnv;
+	private final EngineContext engineContext;
 	private ExecutionContext<?> executionContext;
 
 	public SessionContext(
-			@Nullable String sessionName,
-			Environment originalSessionEnv,
-			DefaultContext defaultContext) {
-		this.sessionName = sessionName;
+			EngineEnvironment originalSessionEnv,
+			EngineContext engineContext) {
 		this.originalSessionEnv = originalSessionEnv;
-		this.defaultContext = defaultContext;
+		this.engineContext = engineContext;
 		this.executionContext = createExecutionContextBuilder(originalSessionEnv).build();
 	}
 
-	public Optional<String> getSessionName() {
-		return Optional.ofNullable(sessionName);
-	}
-
-	public Environment getOriginalSessionEnv() {
+	public EngineEnvironment getOriginalSessionEnv() {
 		return this.originalSessionEnv;
 	}
 
@@ -59,15 +52,15 @@ public class SessionContext {
 	}
 
 	/** Returns ExecutionContext.Builder with given {@link SessionContext} session context. */
-	public ExecutionContext.Builder createExecutionContextBuilder(Environment sessionEnv) {
+	public ExecutionContext.Builder createExecutionContextBuilder(EngineEnvironment sessionEnv) {
 		return ExecutionContext.builder(
-			defaultContext.getDefaultEnv(),
+			engineContext.getDefaultEnv(),
 			sessionEnv,
-			defaultContext.getDependencies(),
-			defaultContext.getFlinkConfig(),
-			defaultContext.getClusterClientServiceLoader(),
-			defaultContext.getCommandLineOptions(),
-			defaultContext.getCommandLines());
+			engineContext.getDependencies(),
+			engineContext.getFlinkConfig(),
+			engineContext.getClusterClientServiceLoader(),
+			engineContext.getCommandLineOptions(),
+			engineContext.getCommandLines());
 	}
 
 	@Override
@@ -79,13 +72,12 @@ public class SessionContext {
 			return false;
 		}
 		SessionContext context = (SessionContext) o;
-		return Objects.equals(sessionName, context.sessionName) &&
-			Objects.equals(originalSessionEnv, context.originalSessionEnv) &&
+		return Objects.equals(originalSessionEnv, context.originalSessionEnv) &&
 			Objects.equals(executionContext, context.executionContext);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(sessionName, originalSessionEnv, executionContext);
+		return Objects.hash(originalSessionEnv, executionContext);
 	}
 }

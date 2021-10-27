@@ -33,20 +33,20 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.plugin.PluginUtils;
-import org.apache.kyuubi.engine.flink.config.Environment;
+import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 
 /**
  * Context describing default environment, dependencies, flink config, etc.
  */
-public class DefaultContext {
-	private final Environment defaultEnv;
+public class EngineContext {
+	private final EngineEnvironment defaultEnv;
 	private final List<URL> dependencies;
 	private final Configuration flinkConfig;
 	private final List<CustomCommandLine> commandLines;
 	private final Options commandLineOptions;
 	private final ClusterClientServiceLoader clusterClientServiceLoader;
 
-	public DefaultContext(Environment defaultEnv, List<URL> dependencies) {
+	public EngineContext(EngineEnvironment defaultEnv, List<URL> dependencies) {
 		this.defaultEnv = defaultEnv;
 		this.dependencies = dependencies;
 
@@ -75,8 +75,8 @@ public class DefaultContext {
 	 * Constructor for testing purposes.
 	 */
 	@VisibleForTesting
-	public DefaultContext(
-			Environment defaultEnv,
+	public EngineContext(
+			EngineEnvironment defaultEnv,
 			List<URL> dependencies,
 			Configuration flinkConfig,
 			CustomCommandLine commandLine,
@@ -93,7 +93,7 @@ public class DefaultContext {
 		return flinkConfig;
 	}
 
-	public Environment getDefaultEnv() {
+	public EngineEnvironment getDefaultEnv() {
 		return defaultEnv;
 	}
 
@@ -129,10 +129,10 @@ public class DefaultContext {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof DefaultContext)) {
+		if (!(o instanceof EngineContext)) {
 			return false;
 		}
-		DefaultContext context = (DefaultContext) o;
+		EngineContext context = (EngineContext) o;
 		return Objects.equals(defaultEnv, context.defaultEnv) &&
 			Objects.equals(dependencies, context.dependencies) &&
 			Objects.equals(flinkConfig, context.flinkConfig) &&

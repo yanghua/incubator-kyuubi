@@ -18,8 +18,6 @@
 
 package org.apache.kyuubi.engine.flink.config;
 
-import org.apache.kyuubi.KyuubiException;
-import org.apache.kyuubi.KyuubiSQLException;
 import org.apache.kyuubi.engine.flink.config.entries.CatalogEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ConfigurationEntry;
 import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
@@ -40,11 +38,11 @@ import java.util.Map;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonMappingException;
 
 /**
- * Environment configuration that represents the content of an environment file. Environment files
+ * EngineEnvironment configuration that represents the content of an environment file. EngineEnvironment files
  * define server, session, catalogs, tables, execution, and deployment behavior.
  * An environment might be defined by default or as part of a session. Environments can be merged or enriched with properties.
  */
-public class Environment {
+public class EngineEnvironment {
 
 	public static final String SERVER_ENTRY = "server";
 
@@ -74,7 +72,7 @@ public class Environment {
 
 	private DeploymentEntry deployment;
 
-	public Environment() {
+	public EngineEnvironment() {
 		this.server = ServerEntry.DEFAULT_INSTANCE;
 		this.session = SessionEntry.DEFAULT_INSTANCE;
 		this.modules = new LinkedHashMap<>();
@@ -239,9 +237,9 @@ public class Environment {
 	/**
 	 * Parses an environment file from an URL.
 	 */
-	public static Environment parse(URL url) throws IOException {
+	public static EngineEnvironment parse(URL url) throws IOException {
 		try {
-			return new ConfigUtil.LowerCaseYamlMapper().readValue(url, Environment.class);
+			return new ConfigUtil.LowerCaseYamlMapper().readValue(url, EngineEnvironment.class);
 		} catch (JsonMappingException e) {
 			throw new RuntimeException("Could not parse environment file. Cause: " + e.getMessage());
 		}
@@ -250,9 +248,9 @@ public class Environment {
 	/**
 	 * Parses an environment file from an String.
 	 */
-	public static Environment parse(String content) throws IOException {
+	public static EngineEnvironment parse(String content) throws IOException {
 		try {
-			return new ConfigUtil.LowerCaseYamlMapper().readValue(content, Environment.class);
+			return new ConfigUtil.LowerCaseYamlMapper().readValue(content, EngineEnvironment.class);
 		} catch (JsonMappingException e) {
 			throw new RuntimeException("Could not parse environment file. Cause: " + e.getMessage());
 		}
@@ -261,8 +259,8 @@ public class Environment {
 	/**
 	 * Merges two environments. The properties of the first environment might be overwritten by the second one.
 	 */
-	public static Environment merge(Environment env1, Environment env2) {
-		final Environment mergedEnv = new Environment();
+	public static EngineEnvironment merge(EngineEnvironment env1, EngineEnvironment env2) {
+		final EngineEnvironment mergedEnv = new EngineEnvironment();
 
 		// merge server properties
 		mergedEnv.server = ServerEntry.merge(env1.getServer(), env2.getServer());
@@ -302,18 +300,18 @@ public class Environment {
 		return mergedEnv;
 	}
 
-	public Environment clone() {
+	public EngineEnvironment clone() {
 		return enrich(this, Collections.emptyMap(), Collections.emptyMap());
 	}
 
 	/**
 	 * Enriches an environment with new/modified properties or views and returns the new instance.
 	 */
-	public static Environment enrich(
-		Environment env,
+	public static EngineEnvironment enrich(
+		EngineEnvironment env,
 		Map<String, String> properties,
 		Map<String, ViewEntry> views) {
-		final Environment enrichedEnv = new Environment();
+		final EngineEnvironment enrichedEnv = new EngineEnvironment();
 
 		enrichedEnv.modules = new LinkedHashMap<>(env.getModules());
 

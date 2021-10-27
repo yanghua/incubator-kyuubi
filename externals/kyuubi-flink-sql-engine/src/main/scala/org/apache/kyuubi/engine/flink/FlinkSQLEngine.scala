@@ -17,13 +17,22 @@
 
 package org.apache.kyuubi.engine.flink
 
-import org.apache.flink.api.java.{ExecutionEnvironment, LocalEnvironment, RemoteEnvironment}
-
+import java.io.File
+import java.net.URL
+import java.util
 import java.util.concurrent.CountDownLatch
+
+import scala.collection.JavaConversions._
+
+import org.apache.flink.util.JarUtils
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.{FLINK_ENGINE_SHUTDOWN_PRIORITY, addShutdownHook}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.countDownLatch
+import org.apache.kyuubi.engine.flink.config.EngineEnvironment
+import org.apache.kyuubi.engine.flink.config.EnvironmentUtil.readEnvironment
+import org.apache.kyuubi.engine.flink.context.EngineContext
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
@@ -31,9 +40,9 @@ import org.apache.kyuubi.util.SignalRegister
 /**
  * A flink sql engine just like an instance of Flink SQL Gateway.
  */
-case class FlinkSQLEngine(env: ExecutionEnvironment) extends Serverable("FlinkSQLEngine") {
+case class FlinkSQLEngine(engineContext: EngineContext) extends Serverable("FlinkSQLEngine") {
 
-  override val backendService = new FlinkSQLBackendService(env)
+  override val backendService = new FlinkSQLBackendService(engineContext)
   override val frontendServices = Seq(new FlinkThriftBinaryFrontendService(this))
 
   override def initialize(conf: KyuubiConf): Unit = super.initialize(conf)
@@ -44,7 +53,6 @@ case class FlinkSQLEngine(env: ExecutionEnvironment) extends Serverable("FlinkSQ
 
   override def start(): Unit = {
     super.start()
-
     backendService.sessionManager.startTerminatingChecker()
   }
 
@@ -66,12 +74,14 @@ object FlinkSQLEngine extends Logging {
     SignalRegister.registerLogger(logger)
 
     try {
-      logger.info(System.getProperties.toString)
       logger.info(System.getProperty("kyuubi.ha.engine.ref.id"))
       kyuubiConf.set(HA_ZK_ENGINE_REF_ID, System.getProperty("kyuubi.ha.engine.ref.id"))
 
-      var env = createExecutionEnvironment()
-      startEngine(env)
+      val engineEnv = createEngineEnvironment()
+      val dependencies = FlinkSQLEngine.discoverDependencies(null, null)
+      val defaultContext = new EngineContext(engineEnv, dependencies)
+
+      startEngine(defaultContext)
 
       // blocking main thread
       countDownLatch.await()
@@ -86,8 +96,8 @@ object FlinkSQLEngine extends Logging {
     }
   }
 
-  def startEngine(env: ExecutionEnvironment): Unit = {
-    currentEngine = Some(new FlinkSQLEngine(env))
+  def startEngine(engineContext: EngineContext): Unit = {
+    currentEngine = Some(new FlinkSQLEngine(engineContext))
     currentEngine.foreach { engine =>
       engine.initialize(kyuubiConf)
       engine.start()
@@ -95,16 +105,39 @@ object FlinkSQLEngine extends Logging {
     }
   }
 
-  def createExecutionEnvironment(): ExecutionEnvironment = {
+  def createEngineEnvironment(): EngineEnvironment = {
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    val env = ExecutionEnvironment.getExecutionEnvironment
-    if (env.isInstanceOf[LocalEnvironment]) {
-      logger.info("local env")
-    } else if (env.isInstanceOf[RemoteEnvironment]) {
-      logger.info("remote env")
-    } else {
-      logger.info("other env")
+    // TODO TBD
+    readEnvironment(null)
+  }
+
+  def discoverDependencies(jars: util.List[URL], libraries: util.List[URL]): util.List[URL] = {
+    val dependencies = new util.ArrayList[URL]
+    try { // find jar files
+      for (url <- jars) {
+        JarUtils.checkJarFile(url)
+        dependencies.add(url)
+      }
+      // find jar files in library directories
+      for (libUrl <- libraries) {
+        val dir = new File(libUrl.toURI)
+        if (!dir.isDirectory) throw new RuntimeException("Directory expected: " + dir)
+        else if (!dir.canRead) throw new RuntimeException("Directory cannot be read: " + dir)
+        val files = dir.listFiles
+        if (files == null) throw new RuntimeException("Directory cannot be read: " + dir)
+        for (f <- files) { // only consider jars
+          if (f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar")) {
+            val url = f.toURI.toURL
+            JarUtils.checkJarFile(url)
+            dependencies.add(url)
+          }
+        }
+      }
+    } catch {
+      case e: Exception =>
+        throw new RuntimeException("Could not load all required JAR files.", e)
     }
-    env
+    if (logger.isDebugEnabled) logger.debug("Using the following dependencies: {}", dependencies)
+    dependencies
   }
 }

@@ -18,7 +18,7 @@
 
 package org.apache.kyuubi.engine.flink.config.entries;
 
-import static org.apache.kyuubi.engine.flink.config.Environment.CONFIGURATION_ENTRY;
+import static org.apache.kyuubi.engine.flink.config.EngineEnvironment.CONFIGURATION_ENTRY;
 
 import java.util.HashMap;
 import java.util.Map;

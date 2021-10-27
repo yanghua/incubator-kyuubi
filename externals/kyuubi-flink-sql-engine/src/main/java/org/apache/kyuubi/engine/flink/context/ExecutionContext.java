@@ -21,7 +21,7 @@ package org.apache.kyuubi.engine.flink.context;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.apache.flink.util.Preconditions.checkState;
 
-import org.apache.kyuubi.engine.flink.config.Environment;
+import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
 import org.apache.kyuubi.engine.flink.config.entries.SinkTableEntry;
@@ -109,7 +109,7 @@ public class ExecutionContext<ClusterID> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ExecutionContext.class);
 
-	private final Environment environment;
+	private final EngineEnvironment engineEnvironment;
 	private final ClassLoader classLoader;
 
 	private final Configuration flinkConfig;
@@ -124,14 +124,14 @@ public class ExecutionContext<ClusterID> {
 	private SessionState sessionState;
 
 	private ExecutionContext(
-			Environment environment,
+			EngineEnvironment engineEnvironment,
 			@Nullable SessionState sessionState,
 			List<URL> dependencies,
 			Configuration flinkConfig,
 			ClusterClientServiceLoader clusterClientServiceLoader,
 			Options commandLineOptions,
 			List<CustomCommandLine> availableCommandLines) throws FlinkException {
-		this.environment = environment;
+		this.engineEnvironment = engineEnvironment;
 
 		this.flinkConfig = flinkConfig;
 
@@ -145,9 +145,9 @@ public class ExecutionContext<ClusterID> {
 		// Initialize the TableEnvironment.
 		initializeTableEnvironment(sessionState);
 
-		LOG.debug("Deployment descriptor: {}", environment.getDeployment());
+		LOG.debug("Deployment descriptor: {}", engineEnvironment.getDeployment());
 		final CommandLine commandLine = createCommandLine(
-			environment.getDeployment(),
+			engineEnvironment.getDeployment(),
 			commandLineOptions);
 
 		flinkConfig.addAll(createExecutionConfig(
@@ -169,8 +169,8 @@ public class ExecutionContext<ClusterID> {
 		return classLoader;
 	}
 
-	public Environment getEnvironment() {
-		return environment;
+	public EngineEnvironment getEnvironment() {
+		return engineEnvironment;
 	}
 
 	public ClusterDescriptor<ClusterID> createClusterDescriptor(Configuration configuration) {
@@ -238,8 +238,8 @@ public class ExecutionContext<ClusterID> {
 
 	/** Returns a builder for this {@link ExecutionContext}. */
 	public static Builder builder(
-			Environment defaultEnv,
-			Environment sessionEnv,
+			EngineEnvironment defaultEnv,
+			EngineEnvironment sessionEnv,
 			List<URL> dependencies,
 			Configuration configuration,
 			ClusterClientServiceLoader serviceLoader,
@@ -393,10 +393,10 @@ public class ExecutionContext<ClusterID> {
 	}
 
 	private void initializeTableEnvironment(@Nullable SessionState sessionState) {
-		final EnvironmentSettings settings = environment.getExecution().getEnvironmentSettings();
+		final EnvironmentSettings settings = engineEnvironment.getExecution().getEnvironmentSettings();
 		// Step 0.0 Initialize the table configuration.
 		final TableConfig config = new TableConfig();
-		environment.getConfiguration().asMap().forEach((k, v) ->
+		engineEnvironment.getConfiguration().asMap().forEach((k, v) ->
 			config.getConfiguration().setString(k, v));
 		final boolean noInheritedState = sessionState == null;
 		if (noInheritedState) {
@@ -420,7 +420,7 @@ public class ExecutionContext<ClusterID> {
 			// Step 1.4 Set up session state.
 			this.sessionState = SessionState.of(catalogManager, moduleManager, functionCatalog);
 
-			// Must initialize the table environment before actually the
+			// Must initialize the table engineEnvironment before actually the
 			createTableEnvironment(settings, config, catalogManager, moduleManager, functionCatalog);
 
 			//--------------------------------------------------------------------------------------------------------------
@@ -428,7 +428,7 @@ public class ExecutionContext<ClusterID> {
 			//--------------------------------------------------------------------------------------------------------------
 			// No need to register the modules info if already inherit from the same session.
 			Map<String, Module> modules = new LinkedHashMap<>();
-			environment.getModules().forEach((name, entry) ->
+			engineEnvironment.getModules().forEach((name, entry) ->
 				modules.put(name, createModule(entry.asMap(), classLoader))
 			);
 			if (!modules.isEmpty()) {
@@ -466,7 +466,7 @@ public class ExecutionContext<ClusterID> {
 			CatalogManager catalogManager,
 			ModuleManager moduleManager,
 			FunctionCatalog functionCatalog) {
-		if (environment.getExecution().isStreamingPlanner()) {
+		if (engineEnvironment.getExecution().isStreamingPlanner()) {
 			streamExecEnv = createStreamExecutionEnvironment();
 			execEnv = null;
 
@@ -480,7 +480,7 @@ public class ExecutionContext<ClusterID> {
 				catalogManager,
 				moduleManager,
 				functionCatalog);
-		} else if (environment.getExecution().isBatchPlanner()) {
+		} else if (engineEnvironment.getExecution().isBatchPlanner()) {
 			streamExecEnv = null;
 			execEnv = createExecutionEnvironment();
 			executor = null;
@@ -499,7 +499,7 @@ public class ExecutionContext<ClusterID> {
 		// Step.1 Create catalogs and register them.
 		//--------------------------------------------------------------------------------------------------------------
 		wrapClassLoader(() -> {
-			environment.getCatalogs().forEach((name, entry) -> {
+			engineEnvironment.getCatalogs().forEach((name, entry) -> {
 				Catalog catalog = createCatalog(name, entry.asMap(), classLoader);
 				tableEnv.registerCatalog(name, catalog);
 			});
@@ -510,12 +510,12 @@ public class ExecutionContext<ClusterID> {
 		//--------------------------------------------------------------------------------------------------------------
 		Map<String, TableSource<?>> tableSources = new HashMap<>();
 		Map<String, TableSink<?>> tableSinks = new HashMap<>();
-		environment.getTables().forEach((name, entry) -> {
+		engineEnvironment.getTables().forEach((name, entry) -> {
 			if (entry instanceof SourceTableEntry || entry instanceof SourceSinkTableEntry) {
-				tableSources.put(name, createTableSource(environment.getExecution(), entry.asMap(), classLoader));
+				tableSources.put(name, createTableSource(engineEnvironment.getExecution(), entry.asMap(), classLoader));
 			}
 			if (entry instanceof SinkTableEntry || entry instanceof SourceSinkTableEntry) {
-				tableSinks.put(name, createTableSink(environment.getExecution(), entry.asMap(), classLoader));
+				tableSinks.put(name, createTableSink(engineEnvironment.getExecution(), entry.asMap(), classLoader));
 			}
 		});
 		// register table sources
@@ -526,7 +526,7 @@ public class ExecutionContext<ClusterID> {
 		//--------------------------------------------------------------------------------------------------------------
 		// Step.4 Register temporal tables.
 		//--------------------------------------------------------------------------------------------------------------
-		environment.getTables().forEach((name, entry) -> {
+		engineEnvironment.getTables().forEach((name, entry) -> {
 			if (entry instanceof TemporalTableEntry) {
 				final TemporalTableEntry temporalTableEntry = (TemporalTableEntry) entry;
 				registerTemporalTable(temporalTableEntry);
@@ -536,7 +536,7 @@ public class ExecutionContext<ClusterID> {
 		//--------------------------------------------------------------------------------------------------------------
 		// Step.5 Register views in specified order.
 		//--------------------------------------------------------------------------------------------------------------
-		environment.getTables().forEach((name, entry) -> {
+		engineEnvironment.getTables().forEach((name, entry) -> {
 			// if registering a view fails at this point,
 			// it means that it accesses tables that are not available anymore
 			if (entry instanceof ViewEntry) {
@@ -549,36 +549,36 @@ public class ExecutionContext<ClusterID> {
 		// Step.6 Set current catalog and database.
 		//--------------------------------------------------------------------------------------------------------------
 		// Switch to the current catalog.
-		Optional<String> catalog = environment.getExecution().getCurrentCatalog();
+		Optional<String> catalog = engineEnvironment.getExecution().getCurrentCatalog();
 		catalog.ifPresent(tableEnv::useCatalog);
 
 		// Switch to the current database.
-		Optional<String> database = environment.getExecution().getCurrentDatabase();
+		Optional<String> database = engineEnvironment.getExecution().getCurrentDatabase();
 		database.ifPresent(tableEnv::useDatabase);
 	}
 
 	private ExecutionEnvironment createExecutionEnvironment() {
 		final ExecutionEnvironment execEnv = ExecutionEnvironment.getExecutionEnvironment();
-		execEnv.setRestartStrategy(environment.getExecution().getRestartStrategy());
-		execEnv.setParallelism(environment.getExecution().getParallelism());
+		execEnv.setRestartStrategy(engineEnvironment.getExecution().getRestartStrategy());
+		execEnv.setParallelism(engineEnvironment.getExecution().getParallelism());
 		return execEnv;
 	}
 
 	private StreamExecutionEnvironment createStreamExecutionEnvironment() {
 		final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-		env.setRestartStrategy(environment.getExecution().getRestartStrategy());
-		env.setParallelism(environment.getExecution().getParallelism());
-		env.setMaxParallelism(environment.getExecution().getMaxParallelism());
-		env.setStreamTimeCharacteristic(environment.getExecution().getTimeCharacteristic());
+		env.setRestartStrategy(engineEnvironment.getExecution().getRestartStrategy());
+		env.setParallelism(engineEnvironment.getExecution().getParallelism());
+		env.setMaxParallelism(engineEnvironment.getExecution().getMaxParallelism());
+		env.setStreamTimeCharacteristic(engineEnvironment.getExecution().getTimeCharacteristic());
 		if (env.getStreamTimeCharacteristic() == TimeCharacteristic.EventTime) {
-			env.getConfig().setAutoWatermarkInterval(environment.getExecution().getPeriodicWatermarksInterval());
+			env.getConfig().setAutoWatermarkInterval(engineEnvironment.getExecution().getPeriodicWatermarksInterval());
 		}
 		return env;
 	}
 
 	private void registerFunctions() {
 		Map<String, FunctionDefinition> functions = new LinkedHashMap<>();
-		environment.getFunctions().forEach((name, entry) -> {
+		engineEnvironment.getFunctions().forEach((name, entry) -> {
 			final UserDefinedFunction function = FunctionService
 				.createFunction(entry.getDescriptor(), classLoader, false);
 			functions.put(name, function);
@@ -651,23 +651,23 @@ public class ExecutionContext<ClusterID> {
 	/** Builder for {@link ExecutionContext}. */
 	public static class Builder {
 		// Required members.
-		private final Environment sessionEnv;
+		private final EngineEnvironment sessionEnv;
 		private final List<URL> dependencies;
 		private final Configuration configuration;
 		private final ClusterClientServiceLoader serviceLoader;
 		private final Options commandLineOptions;
 		private final List<CustomCommandLine> commandLines;
 
-		private Environment defaultEnv;
-		private Environment currentEnv;
+		private EngineEnvironment defaultEnv;
+		private EngineEnvironment currentEnv;
 
 		// Optional members.
 		@Nullable
 		private SessionState sessionState;
 
 		private Builder(
-				Environment defaultEnv,
-				@Nullable Environment sessionEnv,
+				EngineEnvironment defaultEnv,
+				@Nullable EngineEnvironment sessionEnv,
 				List<URL> dependencies,
 				Configuration configuration,
 				ClusterClientServiceLoader serviceLoader,
@@ -682,8 +682,8 @@ public class ExecutionContext<ClusterID> {
 			this.commandLines = commandLines;
 		}
 
-		public Builder env(Environment environment) {
-			this.currentEnv = environment;
+		public Builder env(EngineEnvironment engineEnvironment) {
+			this.currentEnv = engineEnvironment;
 			return this;
 		}
 
@@ -695,7 +695,7 @@ public class ExecutionContext<ClusterID> {
 		public ExecutionContext<?> build() {
 			try {
 				return new ExecutionContext<>(
-					this.currentEnv == null ? Environment.merge(defaultEnv, sessionEnv) : this.currentEnv,
+					this.currentEnv == null ? EngineEnvironment.merge(defaultEnv, sessionEnv) : this.currentEnv,
 					this.sessionState,
 					this.dependencies,
 					this.configuration,

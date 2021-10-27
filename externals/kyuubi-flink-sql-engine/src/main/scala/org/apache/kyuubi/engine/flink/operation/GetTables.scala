@@ -24,19 +24,20 @@ import org.apache.flink.api.java.ExecutionEnvironment
 import org.apache.flink.table.types.logical.VarCharType
 import org.apache.flink.types.Row
 
+import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.operation.FlinkOperation.toJavaRegex
 import org.apache.kyuubi.engine.flink.result.{ColumnInfo, ResultSet}
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class GetTables(
-    env: ExecutionEnvironment,
+    sessionContext: SessionContext,
     session: Session,
     catalog: String,
     schema: String,
     tableName: String,
     tableTypes: Set[String])
-  extends FlinkOperation(env, OperationType.GET_TABLES, session) {
+  extends FlinkOperation(sessionContext, OperationType.GET_TABLES, session) {
 
   override protected def runInternal(): Unit = {
     val schemaPattern = toJavaRegex(schema)

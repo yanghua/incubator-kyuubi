@@ -29,23 +29,24 @@ import org.apache.flink.table.catalog.{CatalogManager, GenericInMemoryCatalog}
 import org.apache.flink.table.module.ModuleManager
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.flink.config.Environment
+import org.apache.kyuubi.engine.flink.config.EngineEnvironment
 import org.apache.kyuubi.engine.flink.config.entries.CatalogEntry.CATALOG_NAME
+import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.engine.flink.shim.FlinkCatalogShim
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
-class GetCatalogs(env: ExecutionEnvironment, session: Session)
-  extends FlinkOperation(env, OperationType.GET_CATALOGS, session) {
+class GetCatalogs(sessionContext: SessionContext, session: Session)
+  extends FlinkOperation(sessionContext, OperationType.GET_CATALOGS, session) {
 
   override protected def runInternal(): Unit = {
     logger.info("Invoke runInternal...")
 
     try {
       if (session.isInstanceOf[FlinkSessionImpl]) {
-        val tableEnv = GetCatalogs.tempCreateTableEnv(env)
+        val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
         val catalogs: java.util.List[String] =
           FlinkCatalogShim().getCatalogs(tableEnv).toList.asJava
         resultSet = OperationUtil.stringListToResultSet(
@@ -64,13 +65,7 @@ object GetCatalogs{
 
   def tempCreateTableEnv(env: ExecutionEnvironment): TableEnvironmentInternal = {
     val config = new TableConfig
-    val environment = new Environment()
-//    environment.setCatalogs(
-//      util.Arrays.asList(
-//        createCatalog("catalog1", "test"),
-//        createCatalog("catalog2", "test")))
-//    environment.getConfiguration.asMap.forEach(
-//      (k: String, v: String) => config.getConfiguration.setString(k, v))
+    val environment = new EngineEnvironment()
 
     val settings = environment.getExecution.getEnvironmentSettings
 
