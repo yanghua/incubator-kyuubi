@@ -32,7 +32,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
-import org.apache.kyuubi.engine.flink.FlinkEngineContainerBuilder
+import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineByRefId
@@ -203,13 +203,13 @@ private[kyuubi] class EngineRef(
     var engineRef = getServerHost(zkClient, engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
 
-    conf.setIfMissing(FlinkEngineContainerBuilder.APP_KEY, defaultEngineName)
+    conf.setIfMissing(FlinkEngineProcessBuilder.APP_KEY, defaultEngineName)
     // tag is a seq type with comma-separated
-    conf.set(FlinkEngineContainerBuilder.TAG_KEY,
-      conf.getOption(FlinkEngineContainerBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
+    conf.set(FlinkEngineProcessBuilder.TAG_KEY,
+      conf.getOption(FlinkEngineProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
     conf.set(HA_ZK_NAMESPACE, engineSpace)
     conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
-    val builder = new FlinkEngineContainerBuilder(appUser, conf)
+    val builder = new FlinkEngineProcessBuilder(appUser, conf)
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
       info(s"Launching engine:\n$builder")

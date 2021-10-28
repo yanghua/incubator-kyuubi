@@ -173,69 +173,126 @@
     <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <configuration>
-          <shadedArtifactAttached>false</shadedArtifactAttached>
-          <artifactSet>
-            <includes>
-              <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
-              <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
-              <include>org.apache.curator:curator-client</include>
-              <include>org.apache.curator:curator-framework</include>
-              <include>org.apache.curator:curator-recipes</include>
-              <include>org.apache.flink:flink-core</include>
-              <include>org.apache.flink:flink-java</include>
-              <include>org.apache.flink:flink-table-api-java</include>
-              <include>org.apache.flink:flink-table-api-java-bridge_${scala.binary.version}</include>
-              <include>org.apache.flink:flink-table-planner_${scala.binary.version}</include>
-              <include>org.apache.flink:flink-table-planner-blink_${scala.binary.version}</include>
-              <include>org.apache.flink:flink-table-runtime-blink_${scala.binary.version}</include>
-              <include>org.apache.flink:flink-streaming-java_${scala.binary.version}</include>
-              <include>org.apache.flink:flink-clients_${scala.binary.version}</include>
-              <include>org.apache.flink:flink-table-common</include>
-            </includes>
-          </artifactSet>
-          <relocations>
-            <relocation>
-              <pattern>org.apache.curator</pattern>
-              <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>
-              <includes>
-                <include>org.apache.curator.**</include>
-              </includes>
-            </relocation>
-          </relocations>
-        </configuration>
+        <artifactId>maven-assembly-plugin</artifactId>
         <executions>
           <execution>
+            <id>bin</id>
             <phase>package</phase>
             <goals>
-              <goal>shade</goal>
+              <goal>single</goal>
             </goals>
             <configuration>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.apache.kyuubi.engine.flink.FlinkSQLEngine</mainClass>
-                </transformer>
-              </transformers>
+              <descriptors>
+                <descriptor>src/main/assemblies/bin.xml</descriptor>
+              </descriptors>
+              <finalName>kyuubi-flink-sql-engine-${project.version}-bin</finalName>
+              <appendAssemblyId>false</appendAssemblyId>
             </configuration>
           </execution>
         </executions>
       </plugin>
 
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.5.0</version>
         <executions>
           <execution>
-            <id>prepare-test-jar</id>
-            <phase>test-compile</phase>
+            <id>remove-build-target-link</id>
+            <phase>clean</phase>
             <goals>
-              <goal>test-jar</goal>
+              <goal>exec</goal>
             </goals>
+            <configuration>
+              <executable>rm</executable>
+              <arguments>
+                <argument>-f</argument>
+                <argument>${project.basedir}/build-target</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>create-build-target-link</id>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>ln</executable>
+              <arguments>
+                <argument>-sfn</argument>
+                <argument>${project.basedir}/target/kyuubi-flink-sql-engine-${project.version}-bin/kyuubi-flink-sql-engine-${project.version}</argument>
+                <argument>${project.basedir}/build-target</argument>
+              </arguments>
+            </configuration>
           </execution>
         </executions>
       </plugin>
+
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-shade-plugin</artifactId>-->
+<!--        <configuration>-->
+<!--          <shadedArtifactAttached>false</shadedArtifactAttached>-->
+<!--          <artifactSet>-->
+<!--            <includes>-->
+<!--              <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>-->
+<!--              <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>-->
+<!--              <include>org.apache.curator:curator-client</include>-->
+<!--              <include>org.apache.curator:curator-framework</include>-->
+<!--              <include>org.apache.curator:curator-recipes</include>-->
+<!--              <include>org.apache.flink:flink-core</include>-->
+<!--              <include>org.apache.flink:flink-java</include>-->
+<!--              <include>org.apache.flink:flink-table-api-java</include>-->
+<!--              <include>org.apache.flink:flink-table-api-java-bridge_${scala.binary.version}</include>-->
+<!--              <include>org.apache.flink:flink-table-planner_${scala.binary.version}</include>-->
+<!--              <include>org.apache.flink:flink-table-planner-blink_${scala.binary.version}</include>-->
+<!--              <include>org.apache.flink:flink-table-runtime-blink_${scala.binary.version}</include>-->
+<!--              <include>org.apache.flink:flink-streaming-java_${scala.binary.version}</include>-->
+<!--              <include>org.apache.flink:flink-clients_${scala.binary.version}</include>-->
+<!--              <include>org.apache.flink:flink-table-common</include>-->
+<!--            </includes>-->
+<!--          </artifactSet>-->
+<!--          <relocations>-->
+<!--            <relocation>-->
+<!--              <pattern>org.apache.curator</pattern>-->
+<!--              <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>-->
+<!--              <includes>-->
+<!--                <include>org.apache.curator.**</include>-->
+<!--              </includes>-->
+<!--            </relocation>-->
+<!--          </relocations>-->
+<!--        </configuration>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <phase>package</phase>-->
+<!--            <goals>-->
+<!--              <goal>shade</goal>-->
+<!--            </goals>-->
+<!--            <configuration>-->
+<!--              <transformers>-->
+<!--                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">-->
+<!--                  <mainClass>org.apache.kyuubi.engine.flink.FlinkSQLEngine</mainClass>-->
+<!--                </transformer>-->
+<!--              </transformers>-->
+<!--            </configuration>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
+
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-jar-plugin</artifactId>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <id>prepare-test-jar</id>-->
+<!--            <phase>test-compile</phase>-->
+<!--            <goals>-->
+<!--              <goal>test-jar</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
     </plugins>
   </build>
 

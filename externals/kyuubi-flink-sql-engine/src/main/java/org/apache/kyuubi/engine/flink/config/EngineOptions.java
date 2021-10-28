@@ -25,7 +25,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
- * Gateway options to configure the gateway server.
+ * Engine options to configure the engine server.
  */
 public class EngineOptions {
 	private final boolean isPrintHelp;

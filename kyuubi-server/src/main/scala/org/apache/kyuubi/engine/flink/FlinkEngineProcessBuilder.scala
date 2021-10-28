@@ -27,18 +27,18 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_FLINK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
-import org.apache.kyuubi.engine.flink.FlinkEngineContainerBuilder.PROXY_USER
+import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder.PROXY_USER
 
 /**
  * A builder to build flink sql engine progress.
  */
-class FlinkEngineContainerBuilder(
+class FlinkEngineProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf)
   extends ProcBuilder with Logging{
 
   override protected def executable: String = {
-    val flinkHomeOpt = env.get("JAVA_HOME").orElse {
+    val flinkEngineHomeOpt = env.get("FLINK_ENGINE_HOME").orElse {
       val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
         .split("kyuubi-server")
       assert(cwd.length > 1)
@@ -142,7 +142,7 @@ class FlinkEngineContainerBuilder(
   }
 }
 
-object FlinkEngineContainerBuilder {
+object FlinkEngineProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
 

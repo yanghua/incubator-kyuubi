@@ -74,7 +74,7 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         // close a opened session
         val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-        response = target(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+        response = target("api/v1/sessions/execpool/statistic").request().get()
         assert(200 == response.getStatus)
 
         // verify the open session count again

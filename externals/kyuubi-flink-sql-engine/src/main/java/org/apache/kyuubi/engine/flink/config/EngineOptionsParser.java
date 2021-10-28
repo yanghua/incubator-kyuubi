@@ -32,7 +32,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.flink.core.fs.Path;
 
 /**
- * Parser for gateway options.
+ * Parser for engine options.
  */
 public class EngineOptionsParser {
 
@@ -88,7 +88,7 @@ public class EngineOptionsParser {
 				"functions, table sources, or sinks. Can be used multiple times.")
 		.build();
 
-	private static final Options GATEWAY_OPTIONS = getGatewayOptions();
+	private static final Options ENGINE_OPTIONS = getEngineOptions();
 
 	// --------------------------------------------------------------------------------------------
 	//  Help
@@ -98,7 +98,7 @@ public class EngineOptionsParser {
 	 * Prints the help.
 	 */
 	public static void printHelp() {
-		System.out.println("./sql-gateway [OPTIONS]");
+		System.out.println("./flink-sql-engine [OPTIONS]");
 		System.out.println();
 		System.out.println("The following options are available:");
 
@@ -106,7 +106,7 @@ public class EngineOptionsParser {
 		formatter.setLeftPadding(5);
 		formatter.setWidth(80);
 
-		formatter.printHelp(" ", GATEWAY_OPTIONS);
+		formatter.printHelp(" ", ENGINE_OPTIONS);
 
 		System.out.println();
 	}
@@ -115,10 +115,10 @@ public class EngineOptionsParser {
 	//  Line Parsing
 	// --------------------------------------------------------------------------------------------
 
-	public static EngineOptions parseGatewayOptions(String[] args) {
+	public static EngineOptions parseEngineOptions(String[] args) {
 		try {
 			DefaultParser parser = new DefaultParser();
-			CommandLine line = parser.parse(GATEWAY_OPTIONS, args, true);
+			CommandLine line = parser.parse(ENGINE_OPTIONS, args, true);
 			Integer port = null;
 			if (line.hasOption(EngineOptionsParser.OPTION_PORT.getOpt())) {
 				port = Integer.valueOf(line.getOptionValue(EngineOptionsParser.OPTION_PORT.getOpt()));
@@ -137,7 +137,7 @@ public class EngineOptionsParser {
 
 	// --------------------------------------------------------------------------------------------
 
-	private static Options getGatewayOptions() {
+	private static Options getEngineOptions() {
 		Options options = new Options();
 		options.addOption(OPTION_HELP);
 		options.addOption(OPTION_DEFAULTS);

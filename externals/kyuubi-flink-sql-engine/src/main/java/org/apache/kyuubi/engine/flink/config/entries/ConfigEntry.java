@@ -25,7 +25,7 @@ import org.apache.flink.table.descriptors.DescriptorProperties;
 
 /**
  * Describes an environment configuration entry (such as catalogs, table, functions, views). Config entries
- * are similar to {@link org.apache.flink.table.descriptors.Descriptor} but apply to SQL Gateway's
+ * are similar to {@link org.apache.flink.table.descriptors.Descriptor} but apply to SQL Engine's
  * environment files only.
  */
 abstract class ConfigEntry {

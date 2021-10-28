@@ -26,7 +26,7 @@ import org.apache.kyuubi.engine.flink.config.ConfigUtil;
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 
 /**
- * Describes a gateway configuration entry.
+ * Describes a engine configuration entry.
  */
 public class ServerEntry extends ConfigEntry {
 
@@ -36,11 +36,11 @@ public class ServerEntry extends ConfigEntry {
 
 	private static final int DEFAULT_PORT = 8083;
 
-	private static final String GATEWAY_BIND_ADDRESS = "bind-address";
+	private static final String ENGINE_BIND_ADDRESS = "bind-address";
 
-	private static final String GATEWAY_ADDRESS = "address";
+	private static final String ENGINE_ADDRESS = "address";
 
-	private static final String GATEWAY_PORT = "port";
+	private static final String ENGINE_PORT = "port";
 
 	private static final String JVM_ARGS = "jvm_args";
 
@@ -50,9 +50,9 @@ public class ServerEntry extends ConfigEntry {
 
 	@Override
 	protected void validate(DescriptorProperties properties) {
-		properties.validateString(GATEWAY_BIND_ADDRESS, true);
-		properties.validateString(GATEWAY_ADDRESS, true);
-		properties.validateInt(GATEWAY_PORT, true, 1024, 65535);
+		properties.validateString(ENGINE_BIND_ADDRESS, true);
+		properties.validateString(ENGINE_ADDRESS, true);
+		properties.validateInt(ENGINE_PORT, true, 1024, 65535);
 		properties.validateString(JVM_ARGS, true);
 	}
 
@@ -68,9 +68,9 @@ public class ServerEntry extends ConfigEntry {
 	 * Merges two session entries. The properties of the first execution entry might be
 	 * overwritten by the second one.
 	 */
-	public static ServerEntry merge(ServerEntry gateway1, ServerEntry gateway2) {
-		final Map<String, String> mergedProperties = new HashMap<>(gateway1.asTopLevelMap());
-		mergedProperties.putAll(gateway2.asTopLevelMap());
+	public static ServerEntry merge(ServerEntry engine1, ServerEntry engine2) {
+		final Map<String, String> mergedProperties = new HashMap<>(engine1.asTopLevelMap());
+		mergedProperties.putAll(engine2.asTopLevelMap());
 
 		final DescriptorProperties properties = new DescriptorProperties(true);
 		properties.putProperties(mergedProperties);
@@ -79,15 +79,15 @@ public class ServerEntry extends ConfigEntry {
 	}
 
 	public Optional<String> getBindAddress() {
-		return properties.getOptionalString(GATEWAY_BIND_ADDRESS);
+		return properties.getOptionalString(ENGINE_BIND_ADDRESS);
 	}
 
 	public String getAddress() {
-		return properties.getOptionalString(GATEWAY_ADDRESS).orElse(DEFAULT_ADDRESS);
+		return properties.getOptionalString(ENGINE_ADDRESS).orElse(DEFAULT_ADDRESS);
 	}
 
 	public int getPort() {
-		return properties.getOptionalInt(GATEWAY_PORT).orElse(DEFAULT_PORT);
+		return properties.getOptionalInt(ENGINE_PORT).orElse(DEFAULT_PORT);
 	}
 
 	public String getJvmArgs() {

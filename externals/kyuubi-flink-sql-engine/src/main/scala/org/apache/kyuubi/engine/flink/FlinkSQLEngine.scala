@@ -37,7 +37,7 @@ import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
 /**
- * A flink sql engine just like an instance of Flink SQL Gateway.
+ * A flink sql engine just like an instance of Flink SQL Engine.
  */
 case class FlinkSQLEngine(engineContext: EngineContext) extends Serverable("FlinkSQLEngine") {
 
@@ -76,7 +76,7 @@ object FlinkSQLEngine extends Logging {
 
 
     try {
-      val engineOptions = EngineOptionsParser.parseGatewayOptions(args)
+      val engineOptions = EngineOptionsParser.parseEngineOptions(args)
 
       if (engineOptions.isPrintHelp) {
         EngineOptionsParser.printHelp()

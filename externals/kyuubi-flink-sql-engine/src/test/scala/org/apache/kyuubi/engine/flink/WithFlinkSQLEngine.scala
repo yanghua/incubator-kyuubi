@@ -17,16 +17,17 @@
 
 package org.apache.kyuubi.engine.flink
 
+import java.net.URL
+import java.util
+
 import org.apache.flink.client.cli.DefaultCLI
 import org.apache.flink.client.deployment.DefaultClusterClientServiceLoader
 import org.apache.flink.configuration.Configuration
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.flink.config.EngineEnvironment
+import org.apache.kyuubi.engine.flink.config.{EngineEnvironment, EngineOptionsParser}
 import org.apache.kyuubi.engine.flink.context.EngineContext
-
-import java.net.URL
-import java.util
 
 trait WithFlinkSQLEngine extends KyuubiFunSuite {
 
@@ -53,7 +54,8 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       System.setProperty(k, v)
       kyuubiConf.set(k, v)
     }
-    engineEnv = FlinkSQLEngine.createEngineEnvironment()
+    engineEnv = FlinkSQLEngine.createEngineEnvironment(
+      EngineOptionsParser.parseEngineOptions(Array()))
     val dependencies = FlinkSQLEngine.discoverDependencies(
       new util.ArrayList[URL](), new util.ArrayList[URL]())
     val defaultContext = new EngineContext(engineEnv, dependencies, new Configuration,
