@@ -17,17 +17,19 @@
 
 package org.apache.kyuubi.engine.flink
 
-import java.io.{File, FilenameFilter}
+//import java.io.{File, FilenameFilter}
+import com.google.common.annotations.VisibleForTesting
+
 import java.net.URI
 import java.nio.file.{Files, Path, Paths}
-
 import scala.collection.mutable.ArrayBuffer
-
-import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_FLINK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
-import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder.PROXY_USER
+import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder.FLINK_ENGINE_BINARY_FILE
+
+import java.io.{File, FilenameFilter}
 
 /**
  * A builder to build flink sql engine progress.
@@ -38,6 +40,8 @@ class FlinkEngineProcessBuilder(
   extends ProcBuilder with Logging{
 
   override protected def executable: String = {
+
+
     val flinkEngineHomeOpt = env.get("FLINK_ENGINE_HOME").orElse {
       val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
         .split("kyuubi-server")
@@ -45,17 +49,24 @@ class FlinkEngineProcessBuilder(
       Option(
         Paths.get(cwd.head)
           .resolve("externals")
-          .resolve("kyuubi-download")
-          .resolve("target")
+          .resolve("kyuubi-flink-sql-engine")
+          .resolve("build-target")
           .toFile
-          .listFiles(new FilenameFilter {
-            override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.startsWith("flink-")}}))
-        .flatMap(_.headOption)
+//          .listFiles(new FilenameFilter {
+//            override def accept(dir: File, name: String): Boolean = {
+//              dir.isDirectory && name.startsWith("flink-")}})
+      )
+//        .flatMap(_.headOption)
         .map(_.getAbsolutePath)
     }
 
-    env.get("JAVA_HOME").get + "/bin/java"
+    flinkEngineHomeOpt.map{ dir =>
+      Paths.get(dir, "bin", FLINK_ENGINE_BINARY_FILE).toAbsolutePath.toFile.getCanonicalPath
+    } getOrElse {
+      throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
+        "For more detail information on installing and configuring Spark, please visit " +
+        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
+    }
   }
 
   override protected def mainResource: Option[String] = {
@@ -88,25 +99,19 @@ class FlinkEngineProcessBuilder(
 
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
-    buffer += "nohup"
     buffer += executable
-    conf.getAll.foreach { case (k, v) =>
-      buffer += s"-D$k=$v"
-    }
-    buffer += "-cp"
-    buffer += "/Users/vinoyang/Documents/projects/apache-kyuubi-1.4.0-SNAPSHOT-bin-test/jars/*:" +
-      "/Users/vinoyang/Documents/projects/apache-kyuubi-1.4.0-SNAPSHOT-bin-test/" +
-      "externals/engines/flink/kyuubi-flink-sql-engine-1.4.0-SNAPSHOT.jar"
-    buffer += mainClass
+//    conf.getAll.foreach { case (k, v) =>
+//      buffer += s"-D$k=$v"
+//    }
 
     // iff the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {
-      buffer += PROXY_USER
-      buffer += proxyUser
+//      buffer += PROXY_USER
+//      buffer += proxyUser
     }
 
-    mainResource.foreach { r => buffer += r }
-    buffer += "&"
+//    mainResource.foreach { r => buffer += r }
+
     buffer.toArray
   }
 
@@ -136,6 +141,40 @@ class FlinkEngineProcessBuilder(
     }
   }
 
+  override def toString: String = commands.map {
+    case arg if arg.startsWith("--") => s"\\\n\t$arg"
+    case arg => arg
+  }.mkString(" ")
+
+  @VisibleForTesting
+  def getFlinkHome: String = {
+    // prepare FLINK_HOME
+    val flinkHomeOpt = env.get("FLINK_HOME").orElse {
+      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+        .split("kyuubi-server")
+      assert(cwd.length > 1)
+      Option(
+        Paths.get(cwd.head)
+          .resolve("externals")
+          .resolve("kyuubi-download")
+          .resolve("target")
+          .toFile
+          .listFiles(new FilenameFilter {
+            override def accept(dir: File, name: String): Boolean = {
+              dir.isDirectory && name.startsWith("flink-")}}))
+        .flatMap(_.headOption)
+        .map(_.getAbsolutePath)
+    }
+
+    flinkHomeOpt.map { dir =>
+      dir
+    } getOrElse {
+      throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
+        "For more detail information on installing and configuring Spark, please visit " +
+        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
+    }
+  }
+
   private def useKeytab(): Boolean = {
     // TODO : TBD
     false
@@ -152,5 +191,5 @@ object FlinkEngineProcessBuilder {
   private final val PRINCIPAL = "spark.kerberos.principal"
   private final val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
-  private final val FLINK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
+  private final val FLINK_ENGINE_BINARY_FILE = "flink-sql-engine.sh"
 }

@@ -63,7 +63,7 @@ FLINK_SQL_ENGINE_LOG="$FLINK_SQL_ENGINE_HOME"/log
 
 FLINK_SQL_ENGINE_DEFAULT_CONF="$FLINK_SQL_ENGINE_CONF"/flink-sql-engine-defaults.yaml
 
-FLINK_SQL_ENGINE_JAR=$(find "$FLINK_SQL_ENGINE_LIB" -regex ".*kyuubi-flink-sql-engine.*.jar")
+FLINK_SQL_ENGINE_JAR=$(find "$FLINK_SQL_ENGINE_LIB" -regex ".*kyuubi-flink-sql-engine-1.4.0-SNAPSHOT.jar")
 
 # build kyuubi-flink-sql-engine classpath
 FLINK_SQL_ENGINE_CLASSPATH=""
@@ -111,8 +111,10 @@ JVM_ARGS=`extractExecutionResults "$jvm_args_output" 1`
 
 if [ -n "$FLINK_SQL_ENGINE_JAR" ]; then
 
+    echo $JAVA_RUN $JVM_ARGS "${log_setting[@]}" -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSQLEngine "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" "`manglePath $FLINK_SQL_ENGINE_JAR`"
+
     # start engine with jar
-    exec $JAVA_RUN $JVM_ARGS "${log_setting[@]}" -classpath ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSqlEngine "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" --jar "`manglePath $FLINK_SQL_ENGINE_JAR`"
+    exec $JAVA_RUN $JVM_ARGS "${log_setting[@]}" -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSQLEngine "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" "`manglePath $FLINK_SQL_ENGINE_JAR`"
 
 # write error message to stderr
 else

@@ -33,22 +33,48 @@
 
     <build>
         <plugins>
+            <!-- Download spark archive -->
+<!--            <plugin>-->
+<!--                <groupId>com.googlecode.maven-download-plugin</groupId>-->
+<!--                <artifactId>download-maven-plugin</artifactId>-->
+<!--                <configuration>-->
+<!--                    <skip>${spark.archive.download.skip}</skip>-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>download-spark-release</id>-->
+<!--                        <phase>compile</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>wget</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <url>${spark.archive.mirror}/${spark.archive.name}</url>-->
+<!--                            &lt;!&ndash; sha512>${spark.archive.sha512}</sha512 &ndash;&gt;-->
+<!--                            <outputDirectory>${project.build.directory}</outputDirectory>-->
+<!--                            <readTimeOut>60000</readTimeOut>-->
+<!--                            <retries>3</retries>-->
+<!--                            <unpack>true</unpack>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
+
+            <!-- Download flink archive -->
             <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
                 <configuration>
-                    <skip>${spark.archive.download.skip}</skip>
+                    <skip>${flink.archive.download.skip}</skip>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>download-spark-release</id>
+                        <id>download-flink-release</id>
                         <phase>compile</phase>
                         <goals>
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>${spark.archive.mirror}/${spark.archive.name}</url>
-                            <!-- sha512>${spark.archive.sha512}</sha512 -->
+                            <url>${flink.archive.mirror}/${flink.archive.name}</url>
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <readTimeOut>60000</readTimeOut>
                             <retries>3</retries>

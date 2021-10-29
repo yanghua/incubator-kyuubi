@@ -64,7 +64,6 @@ case class FlinkSQLEngine(engineContext: EngineContext) extends Serverable("Flin
 object FlinkSQLEngine extends Logging {
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
-
   var currentEngine: Option[FlinkSQLEngine] = None
 
   private val countDownLatch = new CountDownLatch(1)
@@ -73,7 +72,6 @@ object FlinkSQLEngine extends Logging {
     SignalRegister.registerLogger(logger)
 
     checkFlinkVersion()
-
 
     try {
       val engineOptions = EngineOptionsParser.parseEngineOptions(args)

@@ -124,6 +124,10 @@
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
+        <flink.version>1.12.0</flink.version>
+        <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
+        <flink.archive.mirror>https://archive.apache.org/dist/flink/flink-${flink.version}</flink.archive.mirror>
+        <flink.archive.download.skip>false</flink.archive.download.skip>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -1814,6 +1818,13 @@
         </profile>
 
         <profile>
+            <id>flink-mirror-cn</id>
+            <properties>
+                <spark.archive.mirror>https://mirrors.bfsu.edu.cn/apache/flink/flink-${spark.version}</spark.archive.mirror>
+            </properties>
+        </profile>
+
+        <profile>
             <id>tpcds</id>
             <modules>
                 <module>dev/kyuubi-tpcds</module>
@@ -1884,6 +1895,13 @@
             <id>spark-provided</id>
             <properties>
                 <spark.archive.download.skip>true</spark.archive.download.skip>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>flink-provided</id>
+            <properties>
+                <flink.archive.download.skip>true</flink.archive.download.skip>
             </properties>
         </profile>
 
