@@ -17,12 +17,11 @@
 
 package org.apache.kyuubi.engine.flink
 
+//import java.io.{BufferedReader, InputStreamReader}
+//import java.nio.charset.StandardCharsets
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-
-import java.nio.file.{Files, Paths}
-import java.io.{BufferedReader, InputStreamReader}
-import java.nio.charset.StandardCharsets
 
 class FlinkEngineProcessBuilderSuite extends KyuubiFunSuite {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
@@ -31,45 +30,29 @@ class FlinkEngineProcessBuilderSuite extends KyuubiFunSuite {
     val builder = new FlinkEngineProcessBuilder("vinoyang", conf)
     val commands = builder.toString.split(' ')
     val pb = new ProcessBuilder(commands.head)
-    pb.redirectErrorStream(true)
-    pb.environment().put("FLINK_HOME", builder.getFlinkHome)
-
-    val stdout = pb.start()
-
-    try {
-      val bufferedReader: BufferedReader = new BufferedReader(
-        new InputStreamReader(stdout.getInputStream, StandardCharsets.UTF_8))
-      while (stdout.isAlive) {
-        while (bufferedReader.ready()) {
-          val s = bufferedReader.readLine();
-          println(s)
-        }
-      }
-    } finally {
-
-    }
-
-
-//    val isr = new InputStreamReader(stderr)
-//    val br = new BufferedReader(isr)
-//    var line = br.readLine()
-//
-//    System.out.println(line)
-//
-//    while (line != null) {
-//      System.out.println(line)
-//      br.readLine()
-//    }
-    System.out.println("Waiting ...")
-
-
-
-    assert(pb.start().waitFor() === 0)
-    assert(Files.exists(Paths.get(commands.last)))
-
     val process = builder.start
-    assert(process.isAlive)
-    process.destroyForcibly()
+//    pb.redirectErrorStream(true)
+//    pb.environment().put("FLINK_HOME", builder.getFlinkHome)
+//    pb.environment().put("FLINK_CONF_DIR", builder.getFlinkHome + "/conf")
+
+//    val stdout = pb.start()
+
+//    try {
+//      val bufferedReader: BufferedReader = new BufferedReader(
+//        new InputStreamReader(stdout.getInputStream, StandardCharsets.UTF_8))
+//      while (stdout.isAlive) {
+//        while (bufferedReader.ready()) {
+//          val s = bufferedReader.readLine()
+//          // scalastyle:off println
+//          println(s)
+//          if (s === "started engine...") {
+////            stdout.destroyForcibly()
+//          }
+//        }
+//      }
+//    } finally {
+//      stdout.destroyForcibly()
+//    }
   }
 
 }

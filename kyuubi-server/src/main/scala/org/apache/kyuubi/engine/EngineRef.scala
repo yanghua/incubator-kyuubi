@@ -212,16 +212,12 @@ private[kyuubi] class EngineRef(
     val builder = new FlinkEngineProcessBuilder(appUser, conf)
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
-      info(s"Launching engine:\n$builder")
       val process = builder.start
-      info(s"Launched engine:\n$builder")
       val started = System.currentTimeMillis()
       var exitValue: Option[Int] = None
       while (engineRef.isEmpty) {
         if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
-          logger.info("-------------waitting--------")
           exitValue = Some(process.exitValue())
-          logger.info(s"-------------waitting exitValue: $exitValue--------")
           if (exitValue.get != 0) {
             val error = builder.getError
             MetricsSystem.tracing { ms =>
@@ -239,7 +235,6 @@ private[kyuubi] class EngineRef(
             builder.getError)
         }
         engineRef = getEngineByRefId(zkClient, engineSpace, engineRefId)
-        logger.info(s" engine ref is : $engineRef")
       }
       engineRef.get
     } finally {

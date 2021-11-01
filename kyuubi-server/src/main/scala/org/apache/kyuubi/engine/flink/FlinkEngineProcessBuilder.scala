@@ -17,19 +17,18 @@
 
 package org.apache.kyuubi.engine.flink
 
-//import java.io.{File, FilenameFilter}
-import com.google.common.annotations.VisibleForTesting
-
+import java.io.{File, FilenameFilter, InputStreamReader}
 import java.net.URI
 import java.nio.file.{Files, Path, Paths}
-import scala.collection.mutable.ArrayBuffer
+//import scala.collection.mutable.ArrayBuffer
+import com.google.common.annotations.VisibleForTesting
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_FLINK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder.FLINK_ENGINE_BINARY_FILE
 
-import java.io.{File, FilenameFilter}
+import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 /**
  * A builder to build flink sql engine progress.
@@ -40,8 +39,6 @@ class FlinkEngineProcessBuilder(
   extends ProcBuilder with Logging{
 
   override protected def executable: String = {
-
-
     val flinkEngineHomeOpt = env.get("FLINK_ENGINE_HOME").orElse {
       val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
         .split("kyuubi-server")
@@ -54,7 +51,9 @@ class FlinkEngineProcessBuilder(
           .toFile
 //          .listFiles(new FilenameFilter {
 //            override def accept(dir: File, name: String): Boolean = {
-//              dir.isDirectory && name.startsWith("flink-")}})
+//              dir.isDirectory && name.startsWith("kyuubi-flink-sql-engine") &&
+//                !name.endsWith("-bin") && !name.endsWith(".jar")
+//            }})
       )
 //        .flatMap(_.headOption)
         .map(_.getAbsolutePath)
@@ -98,21 +97,37 @@ class FlinkEngineProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
   override protected def commands: Array[String] = {
-    val buffer = new ArrayBuffer[String]()
-    buffer += executable
+    env += ("FLINK_HOME" -> getFlinkHome)
+    env += ("FLINK_CONF_DIR" -> s"${getFlinkHome}/conf")
+    env += ("FLINK_SQL_ENGINE_JAR" -> mainResource.get)
+
+    // run shell to get command string
+    val pb = new ProcessBuilder(executable)
+    pb.environment().putAll(env.asJava)
+    pb.redirectErrorStream(true)
+    val process = pb.start()
+
+    import java.io.BufferedReader
+    val reader = new BufferedReader(new InputStreamReader(process.getInputStream))
+    val result = reader.readLine();
+
+    result.split(' ')
+
+//    val buffer = new ArrayBuffer[String]()
+//    buffer += executable
 //    conf.getAll.foreach { case (k, v) =>
 //      buffer += s"-D$k=$v"
 //    }
 
     // iff the keytab is specified, PROXY_USER is not supported
-    if (!useKeytab()) {
-//      buffer += PROXY_USER
-//      buffer += proxyUser
-    }
+//    if (!useKeytab()) {
+////      buffer += PROXY_USER
+////      buffer += proxyUser
+//    }
 
 //    mainResource.foreach { r => buffer += r }
 
-    buffer.toArray
+//    buffer.toArray
   }
 
   override protected val workingDir: Path = {
@@ -191,5 +206,5 @@ object FlinkEngineProcessBuilder {
   private final val PRINCIPAL = "spark.kerberos.principal"
   private final val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
-  private final val FLINK_ENGINE_BINARY_FILE = "flink-sql-engine.sh"
+  private final val FLINK_ENGINE_BINARY_FILE = "prepare.sh"
 }

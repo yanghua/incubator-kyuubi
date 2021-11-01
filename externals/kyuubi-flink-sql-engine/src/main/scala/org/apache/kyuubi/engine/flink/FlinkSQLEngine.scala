@@ -17,14 +17,16 @@
 
 package org.apache.kyuubi.engine.flink
 
-import org.apache.flink.runtime.util.EnvironmentInformation
-
 import java.io.File
 import java.net.URL
 import java.util
 import java.util.concurrent.CountDownLatch
+
 import scala.collection.JavaConversions._
+
+import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.util.JarUtils
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.{FLINK_ENGINE_SHUTDOWN_PRIORITY, addShutdownHook}
 import org.apache.kyuubi.config.KyuubiConf
@@ -32,7 +34,6 @@ import org.apache.kyuubi.engine.flink.FlinkSQLEngine.countDownLatch
 import org.apache.kyuubi.engine.flink.config.{EngineEnvironment, EngineOptions, EngineOptionsParser}
 import org.apache.kyuubi.engine.flink.config.EnvironmentUtil.readEnvironment
 import org.apache.kyuubi.engine.flink.context.EngineContext
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
@@ -79,14 +80,21 @@ object FlinkSQLEngine extends Logging {
       if (engineOptions.isPrintHelp) {
         EngineOptionsParser.printHelp()
       } else {
-        logger.info(System.getProperty("kyuubi.ha.engine.ref.id"))
-        kyuubiConf.set(HA_ZK_ENGINE_REF_ID, System.getProperty("kyuubi.ha.engine.ref.id"))
+//        logger.info(System.getProperty("kyuubi.ha.engine.ref.id"))
+//        kyuubiConf.set(HA_ZK_ENGINE_REF_ID, System.getProperty("kyuubi.ha.engine.ref.id"))
+
+        println("&&&&&&&&&&&&&")
+        println(System.getenv("FLINK_CONF_DIR"))
 
         val engineEnv = createEngineEnvironment(engineOptions)
-        val dependencies = FlinkSQLEngine.discoverDependencies(null, null)
+        val dependencies = FlinkSQLEngine.discoverDependencies(
+          engineOptions.getJars, engineOptions.getLibraryDirs)
+
         val defaultContext = new EngineContext(engineEnv, dependencies)
 
         startEngine(defaultContext)
+        // scalastyle:off println
+        println("started engine...")
 
         // blocking main thread
         countDownLatch.await()

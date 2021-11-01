@@ -113,9 +113,6 @@ if [ -n "$FLINK_SQL_ENGINE_JAR" ]; then
 
     echo $JAVA_RUN $JVM_ARGS "${log_setting[@]}" -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSQLEngine "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" "`manglePath $FLINK_SQL_ENGINE_JAR`"
 
-    # start engine with jar
-    exec $JAVA_RUN $JVM_ARGS "${log_setting[@]}" -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSQLEngine "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" "`manglePath $FLINK_SQL_ENGINE_JAR`"
-
 # write error message to stderr
 else
     (>&2 echo "[ERROR] Flink SQL Engine JAR file 'kyuubi-flink-sql-engine*.jar' should be located in $FLINK_SQL_ENGINE_LIB.")

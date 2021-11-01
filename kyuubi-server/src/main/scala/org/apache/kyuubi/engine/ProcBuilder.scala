@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.Map
 
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
@@ -47,13 +48,14 @@ trait ProcBuilder {
 
   protected def conf: KyuubiConf
 
-  protected def env: Map[String, String] = conf.getEnvs
+  protected var env: Map[String, String] = Map()
 
   protected val workingDir: Path
 
   final lazy val processBuilder: ProcessBuilder = {
     val pb = new ProcessBuilder(commands: _*)
 
+    env ++= conf.getEnvs
     val envs = pb.environment()
     envs.putAll(env.asJava)
     pb.directory(workingDir.toFile)
@@ -113,6 +115,7 @@ trait ProcBuilder {
         while (true) {
           if (reader.ready()) {
             var line: String = reader.readLine
+            println(line)
             if (containsIgnoreCase(line, "Exception:") &&
               !line.contains("at ") && !line.startsWith("Caused by:")) {
               val sb = new StringBuilder(line)
