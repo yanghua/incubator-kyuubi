@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.engine.flink
 
-//import java.io.{BufferedReader, InputStreamReader}
-//import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,30 +28,15 @@ class FlinkEngineProcessBuilderSuite extends KyuubiFunSuite {
   test("flink engine process builder") {
     val builder = new FlinkEngineProcessBuilder("vinoyang", conf)
     val commands = builder.toString.split(' ')
-    val pb = new ProcessBuilder(commands.head)
+    assert(commands.contains("-Dkyuubi.on=off"))
+    assert(commands.contains("org.apache.kyuubi.engine.flink.FlinkSQLEngine"))
+    val pb = new ProcessBuilder(commands.head, "-h")
+    assert(pb.start().waitFor() === 0)
+    assert(Files.exists(Paths.get(commands.last)))
+
     val process = builder.start
-//    pb.redirectErrorStream(true)
-//    pb.environment().put("FLINK_HOME", builder.getFlinkHome)
-//    pb.environment().put("FLINK_CONF_DIR", builder.getFlinkHome + "/conf")
-
-//    val stdout = pb.start()
-
-//    try {
-//      val bufferedReader: BufferedReader = new BufferedReader(
-//        new InputStreamReader(stdout.getInputStream, StandardCharsets.UTF_8))
-//      while (stdout.isAlive) {
-//        while (bufferedReader.ready()) {
-//          val s = bufferedReader.readLine()
-//          // scalastyle:off println
-//          println(s)
-//          if (s === "started engine...") {
-////            stdout.destroyForcibly()
-//          }
-//        }
-//      }
-//    } finally {
-//      stdout.destroyForcibly()
-//    }
+    assert(process.isAlive)
+    process.destroyForcibly()
   }
 
 }

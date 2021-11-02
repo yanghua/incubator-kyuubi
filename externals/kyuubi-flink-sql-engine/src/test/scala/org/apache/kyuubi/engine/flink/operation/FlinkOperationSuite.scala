@@ -52,4 +52,12 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTests {
     }
   }
 
+  test("execute statement -  select column name with dots") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select 'tmp.hello'")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) === "tmp.hello")
+    }
+  }
+
 }

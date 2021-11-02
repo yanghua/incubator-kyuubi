@@ -19,11 +19,10 @@ package org.apache.kyuubi.engine.flink
 
 import java.net.URL
 import java.util
-
 import org.apache.flink.client.cli.DefaultCLI
 import org.apache.flink.client.deployment.DefaultClusterClientServiceLoader
-import org.apache.flink.configuration.Configuration
-
+import org.apache.flink.configuration.{Configuration, RestOptions}
+import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.config.{EngineEnvironment, EngineOptionsParser}
@@ -31,6 +30,8 @@ import org.apache.kyuubi.engine.flink.context.EngineContext
 
 trait WithFlinkSQLEngine extends KyuubiFunSuite {
 
+  protected val flinkConfig = new Configuration()
+  protected var miniCluster: MiniCluster = _
   protected var engineEnv: EngineEnvironment = _
   protected var engine: FlinkSQLEngine = _
   // conf will be loaded until start spark engine
@@ -40,6 +41,7 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
   protected var connectionUrl: String = _
 
   override def beforeAll(): Unit = {
+    startMiniCluster()
     startFlinkEngine()
     super.beforeAll()
   }
@@ -47,6 +49,7 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
   override def afterAll(): Unit = {
     super.afterAll()
     stopFlinkEngine()
+    miniCluster.close()
   }
 
   def startFlinkEngine(): Unit = {
@@ -58,9 +61,9 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       EngineOptionsParser.parseEngineOptions(Array()))
     val dependencies = FlinkSQLEngine.discoverDependencies(
       new util.ArrayList[URL](), new util.ArrayList[URL]())
-    val defaultContext = new EngineContext(engineEnv, dependencies, new Configuration,
+    val engineContext = new EngineContext(engineEnv, dependencies, flinkConfig,
       new DefaultCLI, new DefaultClusterClientServiceLoader)
-    FlinkSQLEngine.startEngine(defaultContext)
+    FlinkSQLEngine.startEngine(engineContext)
     engine = FlinkSQLEngine.currentEngine.get
     connectionUrl = engine.frontendServices.head.connectionUrl
   }
@@ -70,6 +73,17 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       engine.stop()
       engine = null
     }
+  }
+
+  private def startMiniCluster(): Unit = {
+    val cfg = new MiniClusterConfiguration.Builder()
+      .setConfiguration(flinkConfig)
+      .setNumSlotsPerTaskManager(1)
+      .build
+    miniCluster = new MiniCluster(cfg)
+    miniCluster.start()
+    flinkConfig.setString(RestOptions.ADDRESS, miniCluster.getRestAddress.get().getHost)
+    flinkConfig.setInteger(RestOptions.PORT, miniCluster.getRestAddress.get().getPort)
   }
 
   protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"

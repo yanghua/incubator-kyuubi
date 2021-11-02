@@ -17,20 +17,9 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.util
 import scala.collection.JavaConverters._
 
-import org.apache.flink.api.java.ExecutionEnvironment
-import org.apache.flink.table.api.TableConfig
-import org.apache.flink.table.api.bridge.java.internal.BatchTableEnvironmentImpl
-import org.apache.flink.table.api.internal.TableEnvironmentInternal
-import org.apache.flink.table.descriptors.CatalogDescriptorValidator.CATALOG_TYPE
-import org.apache.flink.table.catalog.{CatalogManager, GenericInMemoryCatalog}
-import org.apache.flink.table.module.ModuleManager
-
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.flink.config.EngineEnvironment
-import org.apache.kyuubi.engine.flink.config.entries.CatalogEntry.CATALOG_NAME
 import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
@@ -42,8 +31,6 @@ class GetCatalogs(sessionContext: SessionContext, session: Session)
   extends FlinkOperation(sessionContext, OperationType.GET_CATALOGS, session) {
 
   override protected def runInternal(): Unit = {
-    logger.info("Invoke runInternal...")
-
     try {
       if (session.isInstanceOf[FlinkSessionImpl]) {
         val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
@@ -57,36 +44,6 @@ class GetCatalogs(sessionContext: SessionContext, session: Session)
         logger.error(e.getMessage, e)
         throw KyuubiSQLException(e)
     }
-  }
-
-}
-
-object GetCatalogs{
-
-  def tempCreateTableEnv(env: ExecutionEnvironment): TableEnvironmentInternal = {
-    val config = new TableConfig
-    val environment = new EngineEnvironment()
-
-    val settings = environment.getExecution.getEnvironmentSettings
-
-    new BatchTableEnvironmentImpl(
-      env,
-      new TableConfig,
-      CatalogManager.newBuilder()
-        .classLoader(Thread.currentThread().getContextClassLoader)
-        .config(config.getConfiguration)
-        .defaultCatalog(settings.getBuiltInCatalogName,
-          new GenericInMemoryCatalog(
-            settings.getBuiltInCatalogName, settings.getBuiltInDatabaseName))
-        .build(),
-      new ModuleManager)
-  }
-
-  private def createCatalog(name: String, `type`: String) = {
-    val prop = new util.HashMap[String, AnyRef]
-    prop.put(CATALOG_NAME, name)
-    prop.put(CATALOG_TYPE, `type`)
-    prop
   }
 
 }

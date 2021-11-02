@@ -40,7 +40,6 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
 
   def setFlinkSession(sessionHandle: SessionHandle, sessionContext: SessionContext): Unit = {
     sessionToFlink.put(sessionHandle, sessionContext)
-    logger.info(sessionToFlink.toString)
   }
 
   def removeFlinkSession(sessionHandle: SessionHandle): SessionContext = {
@@ -52,7 +51,15 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       session: Session,
       statement: String,
       runAsync: Boolean,
-      queryTimeout: Long): Operation = null
+      queryTimeout: Long): Operation = {
+    val op = new ExecuteStatement(
+      getFlinkSession(session.handle),
+      session,
+      statement,
+      runAsync,
+      queryTimeout)
+    addOperation(op)
+  }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
     null

@@ -18,10 +18,13 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.flink.table.types.logical.{BigIntType, BooleanType, DecimalType, DoubleType, FloatType, IntType, LogicalType, NullType, TinyIntType, VarCharType}
+import org.apache.flink.api.common.JobID
+import org.apache.flink.table.types.logical.{BigIntType, BooleanType, CharType, DecimalType, DoubleType, FloatType, IntType, LogicalType, NullType, TinyIntType, VarCharType}
 import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift.{TBoolColumn, TBoolValue, TCLIServiceConstants, TColumn, TColumnDesc, TColumnValue, TDoubleValue, TI16Column, TI16Value, TI32Value, TI64Value, TPrimitiveTypeEntry, TProtocolVersion, TRow, TRowSet, TStringColumn, TStringValue, TTableSchema, TTypeDesc, TTypeEntry, TTypeId, TTypeQualifierValue, TTypeQualifiers}
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.engine.flink.context.SessionContext
+import org.apache.kyuubi.engine.flink.deployment.ClusterDescriptorAdapter
 import org.apache.kyuubi.engine.flink.{FetchIterator, IterableFetchIterator}
 import org.apache.kyuubi.engine.flink.result.{ColumnInfo, ResultSet}
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
@@ -51,6 +54,9 @@ abstract class FlinkOperation(
   protected var iter: FetchIterator[Row] = null
 
   protected var resultSet: ResultSet = _
+
+  protected var clusterDescriptorAdapter: ClusterDescriptorAdapter[_] = _
+  protected var jobId: JobID = _
 
   override protected def beforeRun(): Unit = {
     setHasResultSet(true)
@@ -115,6 +121,32 @@ abstract class FlinkOperation(
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))
     }
+  }
+
+  protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
+    // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
+    // could be thrown.
+    case e: Throwable =>
+      state.synchronized {
+        val errMsg = Utils.stringifyException(e)
+        if (state == OperationState.TIMEOUT) {
+          val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")
+          setOperationException(ke)
+          throw ke
+        } else if (isTerminalState(state)) {
+          warn(s"Ignore exception in terminal state with $statementId: $errMsg")
+        } else {
+          setState(OperationState.ERROR)
+          error(s"Error operating $opType: $errMsg", e)
+          val ke = KyuubiSQLException(s"Error operating $opType: $errMsg", e)
+          setOperationException(ke)
+          throw ke
+        }
+      }
+  }
+
+  protected def getJobName(statement: String): String = {
+    String.format("%s:%s", session.handle, statement)
   }
 
 }
@@ -235,6 +267,10 @@ object FlinkOperation {
       val values = getOrSetAsNull[java.lang.String](
         rows, ordinal, nulls, "")
       TColumn.stringVal(new TStringColumn(values, nulls))
+    } else if (logicalType.isInstanceOf[CharType]) {
+      val values = getOrSetAsNull[java.lang.String](
+        rows, ordinal, nulls, "")
+      TColumn.stringVal(new TStringColumn(values, nulls))
     } else {
       null
     }
@@ -300,6 +336,8 @@ object FlinkOperation {
   } else if (typ.isInstanceOf[DoubleType]) {
     TTypeId.DOUBLE_TYPE
   } else if (typ.isInstanceOf[VarCharType]) {
+    TTypeId.STRING_TYPE
+  } else if (typ.isInstanceOf[CharType]) {
     TTypeId.STRING_TYPE
   } else {
     null

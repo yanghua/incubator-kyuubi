@@ -97,21 +97,12 @@ class FlinkEngineProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
   override protected def commands: Array[String] = {
-    env += ("FLINK_HOME" -> getFlinkHome)
-    env += ("FLINK_CONF_DIR" -> s"${getFlinkHome}/conf")
-    env += ("FLINK_SQL_ENGINE_JAR" -> mainResource.get)
+    prepareEnvVar()
 
     // run shell to get command string
-    val pb = new ProcessBuilder(executable)
-    pb.environment().putAll(env.asJava)
-    pb.redirectErrorStream(true)
-    val process = pb.start()
+    val cmdStr = generateBootstrapCommandStr()
 
-    import java.io.BufferedReader
-    val reader = new BufferedReader(new InputStreamReader(process.getInputStream))
-    val result = reader.readLine();
-
-    result.split(' ')
+    cmdStr.split(' ')
 
 //    val buffer = new ArrayBuffer[String]()
 //    buffer += executable
@@ -194,17 +185,36 @@ class FlinkEngineProcessBuilder(
     // TODO : TBD
     false
   }
+
+  private def prepareEnvVar(): Unit = {
+    env += ("FLINK_HOME" -> getFlinkHome)
+    env += ("FLINK_CONF_DIR" -> s"${getFlinkHome}/conf")
+    env += ("FLINK_SQL_ENGINE_JAR" -> mainResource.get)
+
+    val sb = new StringBuilder
+    conf.getAll.foreach { case (k, v) =>
+      sb.append(s"-D$k=$v ")
+    }
+
+    env += ("FLINK_SQL_ENGINE_DYNAMIC_ARGS" -> sb.toString())
+  }
+
+  private def generateBootstrapCommandStr(): String = {
+    val pb = new ProcessBuilder(executable)
+    pb.environment().putAll(env.asJava)
+    pb.redirectErrorStream(true)
+    val process = pb.start()
+
+    import java.io.BufferedReader
+    val reader = new BufferedReader(new InputStreamReader(process.getInputStream))
+    reader.readLine()
+  }
 }
 
 object FlinkEngineProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
 
-  private final val CONF = "--conf"
-  private final val CLASS = "--class"
-  private final val PROXY_USER = "--proxy-user"
-  private final val PRINCIPAL = "spark.kerberos.principal"
-  private final val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
   private final val FLINK_ENGINE_BINARY_FILE = "prepare.sh"
 }

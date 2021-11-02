@@ -111,7 +111,7 @@ JVM_ARGS=`extractExecutionResults "$jvm_args_output" 1`
 
 if [ -n "$FLINK_SQL_ENGINE_JAR" ]; then
 
-    echo $JAVA_RUN $JVM_ARGS "${log_setting[@]}" -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSQLEngine "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" "`manglePath $FLINK_SQL_ENGINE_JAR`"
+    echo $JAVA_RUN $JVM_ARGS "${log_setting[@]}" -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSQLEngine $FLINK_SQL_ENGINE_DYNAMIC_ARGS "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" "`manglePath $FLINK_SQL_ENGINE_JAR`"
 
 # write error message to stderr
 else
