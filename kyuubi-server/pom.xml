@@ -149,6 +149,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.squareup.okio</groupId>
+            <artifactId>okio</artifactId>
+            <version>1.17.6</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-jaxrs2</artifactId>
         </dependency>

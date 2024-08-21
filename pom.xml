@@ -591,6 +591,18 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-httpclient-okhttp</artifactId>
                 <version>${kubernetes-client.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.squareup.okio</groupId>
+                        <artifactId>okio</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>1.17.6</version>
             </dependency>
 
             <dependency>
