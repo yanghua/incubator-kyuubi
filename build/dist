@@ -296,6 +296,17 @@ echo "Hive $HIVE_VERSION" >> "$DISTDIR/RELEASE"
 # shellcheck disable=SC2145
 echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
+# Exclude files from jar
+sh "$KYUUBI_HOME"/build/exclude-file-from-jar.sh "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/hadoop-client-runtime-3.3.6.jar META-INF/maven/org.apache.avro/avro/pom.xml
+sh "$KYUUBI_HOME"/build/exclude-file-from-jar.sh "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/hadoop-client-runtime-3.3.6.jar META-INF/maven/com.nimbusds/nimbus-jose-jwt/pom.xml
+sh "$KYUUBI_HOME"/build/exclude-file-from-jar.sh "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/hadoop-client-runtime-3.3.6.jar META-INF/maven/net.minidev/json-smart/pom.xml
+sh "$KYUUBI_HOME"/build/exclude-file-from-jar.sh "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/hadoop-client-runtime-3.3.6.jar META-INF/maven/com.google.guava/guava/pom.xml
+sh "$KYUUBI_HOME"/build/exclude-file-from-jar.sh "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/hadoop-client-runtime-3.3.6.jar META-INF/maven/org.eclipse.jetty/jetty-http/pom.xml
+sh "$KYUUBI_HOME"/build/exclude-file-from-jar.sh "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/hadoop-client-runtime-3.3.6.jar META-INF/maven/com.fasterxml.jackson.core/jackson-databind/pom.xml
+sh "$KYUUBI_HOME"/build/exclude-file-from-jar.sh "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/hadoop-client-runtime-3.3.6.jar META-INF/maven/org.apache.commons/commons-compress/pom.xml
+sh "$KYUUBI_HOME"/build/exclude-file-from-jar.sh "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/hadoop-client-runtime-3.3.6.jar META-INF/maven/org.eclipse.jetty/jetty-xml/pom.xml
+sh "$KYUUBI_HOME"/build/exclude-file-from-jar.sh "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/hadoop-client-runtime-3.3.6.jar META-INF/maven/org.apache.commons/commons-configuration2/pom.xml
+
 # Copy kyuubi server jars
 cp -r "$KYUUBI_HOME"/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/jars/"
 
