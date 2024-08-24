@@ -39,7 +39,7 @@ TEMP_DIR=$(mktemp -d)
 
 unzip -q "$JAR_FILE" -d "$TEMP_DIR"
 
-rm -f "$TEMP_DIR/$FILE_TO_EXCLUDE"
+rm -r -f "$TEMP_DIR/$FILE_TO_EXCLUDE"
 
 cd "$TEMP_DIR"
 
