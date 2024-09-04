@@ -284,6 +284,37 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     super.initialize(conf)
   }
 
+  def isThreadPoolNearlyFull(threshold: Double = 0.95): Boolean = {
+    val activeCount = execPool.getActiveCount
+    val queueSize = execPool.getQueue.size
+    val maxPoolSize = execPool.getMaximumPoolSize
+    val queueCapacity = execPool.getQueue.remainingCapacity + queueSize
+
+    val activeRatio = activeCount.toDouble / maxPoolSize
+    val queueRatio = queueSize.toDouble / queueCapacity
+
+    if(logger.isDebugEnabled) {
+      logger.debug(
+        s"ActiveCount: $activeCount, QueueSize: $queueSize, " +
+          s"MaxPoolSize: $maxPoolSize, QueueCapacity: $queueCapacity" +
+          s"ActiveRatio: $activeRatio, QueueRatio: $queueRatio")
+    }
+
+    val isTriggered = activeRatio > threshold || queueRatio > threshold
+    if (isTriggered) {
+      logger.warn(
+        s"Thread pool is nearly full, detail : " +
+          s"ActiveCount: $activeCount, " +
+          s"QueueSize: $queueSize, " +
+          s"MaxPoolSize: $maxPoolSize, " +
+          s"QueueCapacity: $queueCapacity" +
+          s"ActiveRatio: $activeRatio, " +
+          s"QueueRatio: $queueRatio")
+    }
+
+    isTriggered
+  }
+
   override def start(): Unit = synchronized {
     startTimeoutChecker()
     super.start()
