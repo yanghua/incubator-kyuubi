@@ -25,7 +25,7 @@ import javax.ws.rs.ext.{ExceptionMapper, Provider}
 
 import org.eclipse.jetty.server.handler.ContextHandler
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.server.{KyuubiBatchService, KyuubiRestFrontendService, KyuubiServer}
 
 private[api] trait ApiRequestContext {
@@ -48,16 +48,22 @@ private[api] trait ApiRequestContext {
 class RestExceptionMapper extends ExceptionMapper[Exception] with Logging {
   override def toResponse(exception: Exception): Response = {
     warn("Error occurs on accessing REST API.", exception)
+    val ipAddress = Utils.findLocalInetAddress.getHostAddress
+
     exception match {
       case e: WebApplicationException =>
         Response.status(e.getResponse.getStatus)
           .`type`(MediaType.APPLICATION_JSON)
-          .entity(Map("message" -> e.getMessage))
+          .entity(Map(
+            "message" -> e.getMessage,
+            "serverIp" -> ipAddress))
           .build()
       case e =>
         Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .`type`(MediaType.APPLICATION_JSON)
-          .entity(Map("message" -> e.getMessage))
+          .entity(Map(
+            "message" -> e.getMessage,
+            "serverIp" -> ipAddress))
           .build()
     }
   }

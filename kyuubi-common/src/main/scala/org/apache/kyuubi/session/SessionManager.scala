@@ -293,7 +293,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     val activeRatio = activeCount.toDouble / maxPoolSize
     val queueRatio = queueSize.toDouble / queueCapacity
 
-    if(logger.isDebugEnabled) {
+    if (logger.isDebugEnabled) {
       logger.debug(
         s"ActiveCount: $activeCount, QueueSize: $queueSize, " +
           s"MaxPoolSize: $maxPoolSize, QueueCapacity: $queueCapacity" +

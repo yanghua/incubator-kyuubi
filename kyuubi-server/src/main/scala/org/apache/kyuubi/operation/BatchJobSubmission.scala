@@ -219,7 +219,7 @@ class BatchJobSubmission(
       if (session.sessionManager.isThreadPoolNearlyFull()) {
         throw new KyuubiException(
           "Reject Exception: The server is too busy to handle request now, " +
-          "reject it and please retry later.")
+            "reject it and please retry later.")
       }
       val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
