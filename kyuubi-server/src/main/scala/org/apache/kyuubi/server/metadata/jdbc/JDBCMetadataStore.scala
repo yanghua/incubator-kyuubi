@@ -389,11 +389,11 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     val query = queryBuilder.toString()
     JdbcUtils.withConnection { connection =>
       withUpdateCount(connection, query, params.toSeq: _*) { updateCount =>
-        if (updateCount == 0) {
-          throw new KyuubiException(
-            s"Error updating metadata for ${metadata.identifier} by SQL: $query, " +
-              s"with params: ${params.mkString(", ")}")
-        }
+//        if (updateCount == 0) {
+//          throw new KyuubiException(
+//            s"Error updating metadata for ${metadata.identifier} by SQL: $query, " +
+//              s"with params: ${params.mkString(", ")}")
+//        }
       }
     }
   }
